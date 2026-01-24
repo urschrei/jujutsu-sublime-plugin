@@ -52,6 +52,7 @@ All commands are available via the command palette (Ctrl+Shift+P / Cmd+Shift+P) 
 |---------|-------------|
 | **JJ: Squash...** | Interactive squash with multi-select sources and destination picker |
 | **JJ: Quick Squash** | Instantly squash current change into parent (no interaction, ideal for keybinding) |
+| **JJ: Absorb** | Automatically move changes into ancestor commits where those lines were last modified |
 
 ### Navigation and History
 
@@ -120,6 +121,7 @@ SublimeJJ does not define default key bindings. To add your own, go to `Preferen
 - `jj_commit`
 - `jj_squash`
 - `jj_quick_squash`
+- `jj_absorb`
 - `jj_abandon`
 - `jj_undo`
 - `jj_edit`

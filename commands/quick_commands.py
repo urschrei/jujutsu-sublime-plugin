@@ -423,6 +423,38 @@ class JjQuickSquashCommand(JjWindowCommand):
         cli.get_current_change(on_change_info)
 
 
+class JjAbsorbCommand(JjWindowCommand):
+    """Absorb changes into ancestor commits.
+
+    Moves changes from the working copy into the stack of mutable revisions
+    where the corresponding lines were last modified.
+    """
+
+    def run(self):
+        cli = self.get_cli()
+        if cli is None:
+            return
+
+        def on_change_info(info):
+            if info is None:
+                return
+
+            if info.is_empty:
+                self.show_status("Nothing to absorb (change is empty)")
+                return
+
+            def on_result(success, error):
+                if success:
+                    self.show_status("Changes absorbed into ancestors")
+                    refresh_all_views(self.window)
+                else:
+                    self.show_error(f"Failed to absorb: {error}")
+
+            cli.absorb(on_result)
+
+        cli.get_current_change(on_change_info)
+
+
 class JjAbandonCommand(JjWindowCommand):
     """Abandon current change."""
 
