@@ -285,6 +285,21 @@ class JJCli:
 
         self.run_async(["squash"], on_result)
 
+    def absorb(self, callback, from_rev=None):
+        """Absorb changes into ancestor commits.
+
+        Moves changes from the source revision into the stack of mutable
+        revisions where the corresponding lines were last modified.
+        """
+
+        def on_result(result):
+            callback(result.success, result.stderr if not result.success else "")
+
+        args = ["absorb"]
+        if from_rev:
+            args.extend(["--from", from_rev])
+        self.run_async(args, on_result)
+
     def squash_flexible(self, sources, destination, use_dest_message, callback):
         """Flexible squash with multiple sources and destination.
 

@@ -20,6 +20,10 @@
         "command": "jj_quick_squash"
     },
     {
+        "caption": "JJ: Absorb",
+        "command": "jj_absorb"
+    },
+    {
         "caption": "JJ: Abandon Change",
         "command": "jj_abandon"
     },
