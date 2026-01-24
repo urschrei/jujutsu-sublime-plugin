@@ -13,8 +13,8 @@ KIND_WORKING_COPY = (sublime.KIND_ID_FUNCTION, "@", "Working Copy")
 KIND_BOOKMARK = (sublime.KIND_ID_MARKUP, "B", "Bookmark")
 KIND_ACTION = (sublime.KIND_ID_SNIPPET, ">", "Action")
 
-# Highlight colour for unique prefix (uses theme accent colour)
-PREFIX_STYLE = 'style="color: color(var(--accent) blend(var(--foreground) 60%))"'
+# Highlight colour for unique prefix
+PREFIX_STYLE = 'style="color: var(--orangish)"'
 
 
 def format_change_details(change):
