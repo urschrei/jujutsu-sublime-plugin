@@ -671,10 +671,30 @@ class JjRebaseCommand(JjWindowCommand):
         """Step 2: Select the rebase operation type."""
         items = []
         for op in self.OPERATIONS:
+            # Style the details based on operation type
+            details = op["description"]
+
+            # Colour based on source mode
+            if op["source_mode"] == "source":
+                # + descendants in cyan
+                colour = "var(--cyanish)"
+            elif op["source_mode"] == "branch":
+                # whole branch in purple
+                colour = "var(--purplish)"
+            else:
+                # single revision in default
+                colour = "var(--foreground)"
+
+            # Italicise before/after operations
+            if op["dest_mode"] in ("before", "after"):
+                details = f'<i style="color: {colour}">{details}</i>'
+            else:
+                details = f'<span style="color: {colour}">{details}</span>'
+
             items.append(
                 sublime.QuickPanelItem(
                     trigger=op["label"],
-                    details=op["description"],
+                    details=details,
                     kind=KIND_ACTION,
                 )
             )
