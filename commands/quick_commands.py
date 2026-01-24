@@ -29,7 +29,7 @@ class JjNewCommand(JjWindowCommand):
                     self.show_status("Created new change")
                     refresh_all_views(self.window)
                 else:
-                    self.show_error("Failed to create new change: {0}".format(error))
+                    self.show_error(f"Failed to create new change: {error}")
 
             cli.new(on_result, msg)
 
@@ -72,9 +72,7 @@ class JjDescribeCommand(JjWindowCommand):
                         self.show_status("Description updated")
                         refresh_all_views(self.window)
                     else:
-                        self.show_error(
-                            "Failed to update description: {0}".format(error)
-                        )
+                        self.show_error(f"Failed to update description: {error}")
 
                 cli.describe(msg, on_result)
 
@@ -107,7 +105,7 @@ class JjCommitCommand(JjWindowCommand):
                     self.show_status("Change committed")
                     refresh_all_views(self.window)
                 else:
-                    self.show_error("Failed to commit: {0}".format(error))
+                    self.show_error(f"Failed to commit: {error}")
 
             cli.commit(msg, on_result)
 
@@ -155,9 +153,7 @@ class JjSquashCommand(JjWindowCommand):
         if has_done_option:
             items.append(
                 [
-                    ">> Squash {0} selected change(s) >>".format(
-                        len(self.selected_sources)
-                    ),
+                    f">> Squash {len(self.selected_sources)} selected change(s) >>",
                     "  Proceed to select destination",
                 ]
             )
@@ -167,17 +163,13 @@ class JjSquashCommand(JjWindowCommand):
             is_selected = change.change_id in self.selected_sources
             prefix = "[x] " if is_selected else "[ ] "
             wc_marker = "@ " if change.is_working_copy else ""
-            bookmarks = (
-                " [{0}]".format(", ".join(change.bookmarks)) if change.bookmarks else ""
-            )
+            bookmarks = f" [{', '.join(change.bookmarks)}]" if change.bookmarks else ""
             empty = " (empty)" if change.is_empty else ""
             immutable = " [immutable]" if change.is_immutable else ""
             items.append(
                 [
-                    "{0}{1}{2}{3}{4}{5}".format(
-                        prefix, wc_marker, change.change_id, bookmarks, empty, immutable
-                    ),
-                    "  {0}".format(change.description),
+                    f"{prefix}{wc_marker}{change.change_id}{bookmarks}{empty}{immutable}",
+                    f"  {change.description}",
                 ]
             )
 
@@ -219,18 +211,14 @@ class JjSquashCommand(JjWindowCommand):
             # Exclude selected sources from destinations
             if change.change_id in self.selected_sources:
                 continue
-            bookmarks = (
-                " [{0}]".format(", ".join(change.bookmarks)) if change.bookmarks else ""
-            )
+            bookmarks = f" [{', '.join(change.bookmarks)}]" if change.bookmarks else ""
             empty = " (empty)" if change.is_empty else ""
             immutable = " [immutable]" if change.is_immutable else ""
             wc_marker = "@ " if change.is_working_copy else ""
             items.append(
                 [
-                    "{0}{1}{2}{3}{4}".format(
-                        wc_marker, change.change_id, bookmarks, empty, immutable
-                    ),
-                    "  {0}".format(change.description),
+                    f"{wc_marker}{change.change_id}{bookmarks}{empty}{immutable}",
+                    f"  {change.description}",
                 ]
             )
             valid_changes.append(change)
@@ -272,12 +260,10 @@ class JjSquashCommand(JjWindowCommand):
 
         def on_result(success, error):
             if success:
-                self.show_status(
-                    "Squashed {0} change(s) into {1}".format(len(sources), dest)
-                )
+                self.show_status(f"Squashed {len(sources)} change(s) into {dest}")
                 refresh_all_views(self.window)
             else:
-                self.show_error("Failed to squash: {0}".format(error))
+                self.show_error(f"Failed to squash: {error}")
 
         self.cli.squash_flexible(sources, dest, use_dest_message, on_result)
 
@@ -306,7 +292,7 @@ class JjQuickSquashCommand(JjWindowCommand):
                     self.show_status("Squashed into parent")
                     refresh_all_views(self.window)
                 else:
-                    self.show_error("Failed to squash: {0}".format(error))
+                    self.show_error(f"Failed to squash: {error}")
 
             cli.squash(on_result)
 
@@ -331,7 +317,7 @@ class JjAbandonCommand(JjWindowCommand):
                     self.show_status("Change abandoned")
                     refresh_all_views(self.window)
                 else:
-                    self.show_error("Failed to abandon: {0}".format(error))
+                    self.show_error(f"Failed to abandon: {error}")
 
             cli.abandon(on_result)
 
@@ -354,7 +340,7 @@ class JjUndoCommand(JjWindowCommand):
                 self.show_status("Undo successful")
                 refresh_all_views(self.window)
             else:
-                self.show_error("Failed to undo: {0}".format(error))
+                self.show_error(f"Failed to undo: {error}")
 
         cli.undo(on_result)
 
@@ -376,17 +362,13 @@ class JjEditCommand(JjWindowCommand):
             for change in changes:
                 prefix = "@ " if change.is_working_copy else "  "
                 bookmarks = (
-                    " [{0}]".format(", ".join(change.bookmarks))
-                    if change.bookmarks
-                    else ""
+                    f" [{', '.join(change.bookmarks)}]" if change.bookmarks else ""
                 )
                 empty = " (empty)" if change.is_empty else ""
                 items.append(
                     [
-                        "{0}{1}{2}{3}".format(
-                            prefix, change.change_id, bookmarks, empty
-                        ),
-                        "  {0}".format(change.description),
+                        f"{prefix}{change.change_id}{bookmarks}{empty}",
+                        f"  {change.description}",
                     ]
                 )
 
@@ -401,10 +383,10 @@ class JjEditCommand(JjWindowCommand):
 
                 def on_result(success, error):
                     if success:
-                        self.show_status("Now editing {0}".format(selected.change_id))
+                        self.show_status(f"Now editing {selected.change_id}")
                         refresh_all_views(self.window)
                     else:
-                        self.show_error("Failed to edit: {0}".format(error))
+                        self.show_error(f"Failed to edit: {error}")
 
                 cli.edit(selected.change_id, on_result)
 
@@ -449,25 +431,21 @@ class JjLogCommand(JjWindowCommand):
 
         def on_log(changes):
             if not changes:
-                self.show_status("No changes match revset: {0}".format(revset))
+                self.show_status(f"No changes match revset: {revset}")
                 return
 
             items = []
             for change in changes:
                 prefix = "@ " if change.is_working_copy else "  "
                 bookmarks = (
-                    " [{0}]".format(", ".join(change.bookmarks))
-                    if change.bookmarks
-                    else ""
+                    f" [{', '.join(change.bookmarks)}]" if change.bookmarks else ""
                 )
                 empty = " (empty)" if change.is_empty else ""
                 immutable = " [immutable]" if change.is_immutable else ""
                 items.append(
                     [
-                        "{0}{1}{2}{3}{4}".format(
-                            prefix, change.change_id, bookmarks, empty, immutable
-                        ),
-                        "  {0}".format(change.description),
+                        f"{prefix}{change.change_id}{bookmarks}{empty}{immutable}",
+                        f"  {change.description}",
                     ]
                 )
 
@@ -482,10 +460,10 @@ class JjLogCommand(JjWindowCommand):
 
                 def on_result(success, error):
                     if success:
-                        self.show_status("Now editing {0}".format(selected.change_id))
+                        self.show_status(f"Now editing {selected.change_id}")
                         refresh_all_views(self.window)
                     else:
-                        self.show_error("Failed to edit: {0}".format(error))
+                        self.show_error(f"Failed to edit: {error}")
 
                 self.cli.edit(selected.change_id, on_result)
 
@@ -579,17 +557,13 @@ class JjRebaseCommand(JjWindowCommand):
             for i, change in enumerate(changes):
                 prefix = "@ " if change.is_working_copy else "  "
                 bookmarks = (
-                    " [{0}]".format(", ".join(change.bookmarks))
-                    if change.bookmarks
-                    else ""
+                    f" [{', '.join(change.bookmarks)}]" if change.bookmarks else ""
                 )
                 empty = " (empty)" if change.is_empty else ""
                 items.append(
                     [
-                        "{0}{1}{2}{3}".format(
-                            prefix, change.change_id, bookmarks, empty
-                        ),
-                        "  {0}".format(change.description),
+                        f"{prefix}{change.change_id}{bookmarks}{empty}",
+                        f"  {change.description}",
                     ]
                 )
                 # If @ is empty, default to the next one (@-)
@@ -613,7 +587,7 @@ class JjRebaseCommand(JjWindowCommand):
         """Step 2: Select the rebase operation type."""
         items = []
         for op in self.OPERATIONS:
-            items.append([op["label"], "  {0}".format(op["description"])])
+            items.append([op["label"], f"  {op['description']}"])
 
         def on_select(idx):
             if idx < 0:
@@ -633,17 +607,13 @@ class JjRebaseCommand(JjWindowCommand):
         for change in self.all_changes:
             if change.change_id in exclude_ids:
                 continue
-            bookmarks = (
-                " [{0}]".format(", ".join(change.bookmarks)) if change.bookmarks else ""
-            )
+            bookmarks = f" [{', '.join(change.bookmarks)}]" if change.bookmarks else ""
             empty = " (empty)" if change.is_empty else ""
             immutable = " [immutable]" if change.is_immutable else ""
             items.append(
                 [
-                    "{0}{1}{2}{3}".format(
-                        change.change_id, bookmarks, empty, immutable
-                    ),
-                    "  {0}".format(change.description),
+                    f"{change.change_id}{bookmarks}{empty}{immutable}",
+                    f"  {change.description}",
                 ]
             )
             valid_changes.append(change)
@@ -668,16 +638,13 @@ class JjRebaseCommand(JjWindowCommand):
 
         def on_result(success, error):
             if success:
+                dest_mode_display = "onto" if dest_mode == "onto" else dest_mode
                 self.show_status(
-                    "Rebased {0} {1} {2}".format(
-                        source_rev,
-                        "onto" if dest_mode == "onto" else dest_mode,
-                        dest.change_id,
-                    )
+                    f"Rebased {source_rev} {dest_mode_display} {dest.change_id}"
                 )
                 refresh_all_views(self.window)
             else:
-                self.show_error("Failed to rebase: {0}".format(error))
+                self.show_error(f"Failed to rebase: {error}")
 
         self.cli.rebase_flexible(
             source_mode, source_rev, dest_mode, dest.change_id, on_result
@@ -722,17 +689,13 @@ class JjBookmarkSetCommand(JjWindowCommand):
             for change in changes:
                 prefix = "@ " if change.is_working_copy else "  "
                 bookmarks = (
-                    " [{0}]".format(", ".join(change.bookmarks))
-                    if change.bookmarks
-                    else ""
+                    f" [{', '.join(change.bookmarks)}]" if change.bookmarks else ""
                 )
                 empty = " (empty)" if change.is_empty else ""
                 items.append(
                     [
-                        "{0}{1}{2}{3}".format(
-                            prefix, change.change_id, bookmarks, empty
-                        ),
-                        "  {0}".format(change.description),
+                        f"{prefix}{change.change_id}{bookmarks}{empty}",
+                        f"  {change.description}",
                     ]
                 )
 
@@ -745,13 +708,11 @@ class JjBookmarkSetCommand(JjWindowCommand):
                 def on_result(success, error):
                     if success:
                         self.show_status(
-                            "Bookmark '{0}' set to {1}".format(
-                                self.bookmark_name, selected.change_id
-                            )
+                            f"Bookmark '{self.bookmark_name}' set to {selected.change_id}"
                         )
                         refresh_all_views(self.window)
                     else:
-                        self.show_error("Failed to set bookmark: {0}".format(error))
+                        self.show_error(f"Failed to set bookmark: {error}")
 
                 self.cli.bookmark_set(self.bookmark_name, selected.change_id, on_result)
 
@@ -785,7 +746,7 @@ class JjBookmarkMoveCommand(JjWindowCommand):
                 items.append(
                     [
                         bm.name,
-                        "  {0}: {1}".format(bm.change_id, bm.description),
+                        f"  {bm.change_id}: {bm.description}",
                     ]
                 )
 
@@ -811,17 +772,13 @@ class JjBookmarkMoveCommand(JjWindowCommand):
             for change in changes:
                 prefix = "@ " if change.is_working_copy else "  "
                 bookmarks = (
-                    " [{0}]".format(", ".join(change.bookmarks))
-                    if change.bookmarks
-                    else ""
+                    f" [{', '.join(change.bookmarks)}]" if change.bookmarks else ""
                 )
                 empty = " (empty)" if change.is_empty else ""
                 items.append(
                     [
-                        "{0}{1}{2}{3}".format(
-                            prefix, change.change_id, bookmarks, empty
-                        ),
-                        "  {0}".format(change.description),
+                        f"{prefix}{change.change_id}{bookmarks}{empty}",
+                        f"  {change.description}",
                     ]
                 )
 
@@ -834,13 +791,11 @@ class JjBookmarkMoveCommand(JjWindowCommand):
                 def on_result(success, error):
                     if success:
                         self.show_status(
-                            "Moved bookmark '{0}' to {1}".format(
-                                self.selected_bookmark.name, selected.change_id
-                            )
+                            f"Moved bookmark '{self.selected_bookmark.name}' to {selected.change_id}"
                         )
                         refresh_all_views(self.window)
                     else:
-                        self.show_error("Failed to move bookmark: {0}".format(error))
+                        self.show_error(f"Failed to move bookmark: {error}")
 
                 self.cli.bookmark_move(
                     self.selected_bookmark.name, selected.change_id, on_result
@@ -885,7 +840,7 @@ class JjBookmarkDeleteCommand(JjWindowCommand):
         if has_delete_option:
             items.append(
                 [
-                    ">> Delete {0} bookmark(s) >>".format(len(self.selected_bookmarks)),
+                    f">> Delete {len(self.selected_bookmarks)} bookmark(s) >>",
                     "  Confirm deletion",
                 ]
             )
@@ -896,8 +851,8 @@ class JjBookmarkDeleteCommand(JjWindowCommand):
             prefix = "[x] " if is_selected else "[ ] "
             items.append(
                 [
-                    "{0}{1}".format(prefix, bm.name),
-                    "  {0}: {1}".format(bm.change_id, bm.description),
+                    f"{prefix}{bm.name}",
+                    f"  {bm.change_id}: {bm.description}",
                 ]
             )
 
@@ -931,7 +886,7 @@ class JjBookmarkDeleteCommand(JjWindowCommand):
     def _confirm_delete(self):
         """Confirm deletion of selected bookmarks."""
         names = list(self.selected_bookmarks)
-        msg = "Delete {0} bookmark(s): {1}?".format(len(names), ", ".join(names))
+        msg = f"Delete {len(names)} bookmark(s): {', '.join(names)}?"
 
         def on_confirm(idx):
             if idx != 0:
@@ -939,10 +894,10 @@ class JjBookmarkDeleteCommand(JjWindowCommand):
 
             def on_result(success, error):
                 if success:
-                    self.show_status("Deleted {0} bookmark(s)".format(len(names)))
+                    self.show_status(f"Deleted {len(names)} bookmark(s)")
                     refresh_all_views(self.window)
                 else:
-                    self.show_error("Failed to delete bookmarks: {0}".format(error))
+                    self.show_error(f"Failed to delete bookmarks: {error}")
 
             self.cli.bookmark_delete(names, on_result)
 
@@ -976,7 +931,7 @@ class JjBookmarkRenameCommand(JjWindowCommand):
                 items.append(
                     [
                         bm.name,
-                        "  {0}: {1}".format(bm.change_id, bm.description),
+                        f"  {bm.change_id}: {bm.description}",
                     ]
                 )
 
@@ -1006,13 +961,11 @@ class JjBookmarkRenameCommand(JjWindowCommand):
             def on_result(success, error):
                 if success:
                     self.show_status(
-                        "Renamed bookmark '{0}' to '{1}'".format(
-                            self.old_bookmark.name, new_name
-                        )
+                        f"Renamed bookmark '{self.old_bookmark.name}' to '{new_name}'"
                     )
                     refresh_all_views(self.window)
                 else:
-                    self.show_error("Failed to rename bookmark: {0}".format(error))
+                    self.show_error(f"Failed to rename bookmark: {error}")
 
             self.cli.bookmark_rename(self.old_bookmark.name, new_name, on_result)
 
@@ -1045,7 +998,7 @@ class JjBookmarkListCommand(JjWindowCommand):
                 items.append(
                     [
                         bm.name,
-                        "  {0}: {1}".format(bm.change_id, bm.description),
+                        f"  {bm.change_id}: {bm.description}",
                     ]
                 )
 
@@ -1058,10 +1011,10 @@ class JjBookmarkListCommand(JjWindowCommand):
 
                 def on_result(success, error):
                     if success:
-                        self.show_status("Now editing {0}".format(selected.change_id))
+                        self.show_status(f"Now editing {selected.change_id}")
                         refresh_all_views(self.window)
                     else:
-                        self.show_error("Failed to edit: {0}".format(error))
+                        self.show_error(f"Failed to edit: {error}")
 
                 self.cli.edit(selected.change_id, on_result)
 
@@ -1095,17 +1048,13 @@ class JjGitPushChangeCommand(JjWindowCommand):
             for i, change in enumerate(changes):
                 prefix = "@ " if change.is_working_copy else "  "
                 bookmarks = (
-                    " [{0}]".format(", ".join(change.bookmarks))
-                    if change.bookmarks
-                    else ""
+                    f" [{', '.join(change.bookmarks)}]" if change.bookmarks else ""
                 )
                 empty = " (empty)" if change.is_empty else ""
                 items.append(
                     [
-                        "{0}{1}{2}{3}".format(
-                            prefix, change.change_id, bookmarks, empty
-                        ),
-                        "  {0}".format(change.description),
+                        f"{prefix}{change.change_id}{bookmarks}{empty}",
+                        f"  {change.description}",
                     ]
                 )
                 # Default to @- if @ is empty
@@ -1133,12 +1082,10 @@ class JjGitPushChangeCommand(JjWindowCommand):
             if success:
                 if bookmark_name:
                     self.show_status(
-                        "Pushed {0} as bookmark '{1}'".format(
-                            change.change_id, bookmark_name
-                        )
+                        f"Pushed {change.change_id} as bookmark '{bookmark_name}'"
                     )
                 else:
-                    self.show_status("Pushed {0}".format(change.change_id))
+                    self.show_status(f"Pushed {change.change_id}")
 
                 refresh_all_views(self.window)
 
@@ -1146,7 +1093,7 @@ class JjGitPushChangeCommand(JjWindowCommand):
                 if pr_url:
                     self._offer_open_pr(pr_url, bookmark_name)
             else:
-                self.show_error("Failed to push: {0}".format(error))
+                self.show_error(f"Failed to push: {error}")
 
         self.cli.git_push_change(change.change_id, on_result)
 
@@ -1155,7 +1102,7 @@ class JjGitPushChangeCommand(JjWindowCommand):
         items = [
             [
                 "Open GitHub to create PR",
-                "  {0}".format(pr_url),
+                f"  {pr_url}",
             ],
             ["Dismiss", "  Copy URL to clipboard instead"],
         ]

@@ -4,69 +4,58 @@ import os
 import re
 import subprocess
 import threading
+from dataclasses import dataclass, field
 
 import sublime
 
 
-class JJResult(object):
+@dataclass
+class JJResult:
     """Result of a jj command execution."""
 
-    def __init__(self, success, stdout, stderr, returncode):
-        self.success = success
-        self.stdout = stdout
-        self.stderr = stderr
-        self.returncode = returncode
+    success: bool
+    stdout: str
+    stderr: str
+    returncode: int
 
 
-class ChangeInfo(object):
+@dataclass
+class ChangeInfo:
     """Information about a jj change."""
 
-    def __init__(
-        self,
-        change_id,
-        commit_id,
-        description,
-        author,
-        timestamp,
-        is_empty,
-        is_immutable,
-        is_working_copy,
-        bookmarks,
-    ):
-        self.change_id = change_id
-        self.commit_id = commit_id
-        self.description = description
-        self.author = author
-        self.timestamp = timestamp
-        self.is_empty = is_empty
-        self.is_immutable = is_immutable
-        self.is_working_copy = is_working_copy
-        self.bookmarks = bookmarks
+    change_id: str
+    commit_id: str
+    description: str
+    author: str
+    timestamp: str
+    is_empty: bool
+    is_immutable: bool
+    is_working_copy: bool
+    bookmarks: list = field(default_factory=list)
 
 
-class DiffHunk(object):
+@dataclass
+class DiffHunk:
     """Represents a diff hunk for gutter markers."""
 
-    def __init__(self, old_start, old_count, new_start, new_count, hunk_type, lines):
-        self.old_start = old_start
-        self.old_count = old_count
-        self.new_start = new_start
-        self.new_count = new_count
-        self.hunk_type = hunk_type  # 'added', 'modified', 'deleted'
-        self.lines = lines
+    old_start: int
+    old_count: int
+    new_start: int
+    new_count: int
+    hunk_type: str  # 'added', 'modified', 'deleted'
+    lines: list = field(default_factory=list)
 
 
-class BookmarkInfo(object):
+@dataclass
+class BookmarkInfo:
     """Information about a jj bookmark."""
 
-    def __init__(self, name, change_id, description):
-        self.name = name
-        self.change_id = change_id
-        self.description = description
+    name: str
+    change_id: str
+    description: str
 
 
-# Simple thread pool implementation for Python 3.3
-class SimpleThreadPool(object):
+class SimpleThreadPool:
     """Simple thread pool for async execution."""
 
     def __init__(self, max_workers=4):
@@ -87,7 +76,7 @@ class SimpleThreadPool(object):
 _executor = SimpleThreadPool(max_workers=4)
 
 
-class JJCli(object):
+class JJCli:
     """Wrapper for jj CLI commands."""
 
     # Templates for machine-readable output
@@ -161,7 +150,7 @@ class JJCli(object):
             return JJResult(
                 success=False,
                 stdout="",
-                stderr="jj executable not found: {0}".format(self.jj_path),
+                stderr=f"jj executable not found: {self.jj_path}",
                 returncode=-1,
             )
         except Exception as e:
@@ -531,7 +520,7 @@ class JJCli(object):
 
         env = os.environ.copy()
         env["NO_COLOR"] = "1"
-        env["JJ_EDITOR"] = "cat {0}".format(temp_path)
+        env["JJ_EDITOR"] = f"cat {temp_path}"
 
         # Run split command
         def run_and_cleanup(result):

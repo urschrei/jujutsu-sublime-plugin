@@ -4,31 +4,30 @@ This document captures lessons learned while developing SublimeJJ. It serves as 
 
 ## Python Version Compatibility
 
-**Critical**: Although Sublime Text 4 officially supports Python 3.8, some installations (particularly on macOS) may load plugins with Python 3.3. To be safe, always use Python 3.3 compatible syntax:
+**Confirmed**: Sublime Text uses Python 3.8 (verified via `sys.version` in console). This allows modern Python syntax:
 
 ```python
-# DO NOT USE - Python 3.6+ only
+# Modern Python 3.8+ syntax (now allowed)
 f"Hello {name}"
-my_list: list[str] = []
 @dataclass
 class Foo:
     pass
 
-# USE INSTEAD - Python 3.3 compatible
-"Hello {0}".format(name)
-my_list = []  # No type hints
-class Foo(object):
-    def __init__(self):
-        pass
+# No longer needed
+"Hello {0}".format(name)  # Use f-strings instead
+class Foo(object):        # Remove explicit object inheritance
+    pass
 ```
 
-Key restrictions:
-- No f-strings (use `.format()`)
-- No type hints
-- No dataclasses
-- Use `object` as explicit base class
-- No `subprocess.run()` (use `subprocess.Popen()`)
-- No `concurrent.futures` (implement simple thread pool)
+Available features:
+- f-strings
+- dataclasses (`from dataclasses import dataclass`)
+- Type hints (though not enforced at runtime)
+- `concurrent.futures.ThreadPoolExecutor`
+- Assignment expressions (walrus operator `:=`)
+- Positional-only parameters
+
+Still use `subprocess.Popen()` over `subprocess.run()` for compatibility with timeout handling.
 
 ## Plugin Structure
 

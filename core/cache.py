@@ -4,7 +4,7 @@ import time
 import threading
 
 
-class TTLCache(object):
+class TTLCache:
     """Simple TTL cache with thread-safe access."""
 
     def __init__(self, default_ttl=5.0):

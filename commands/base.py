@@ -48,11 +48,11 @@ class JjWindowCommand(sublime_plugin.WindowCommand):
 
     def show_error(self, message):
         """Show an error message."""
-        sublime.error_message("SublimeJJ: {0}".format(message))
+        sublime.error_message(f"SublimeJJ: {message}")
 
     def show_status(self, message):
         """Show a status message."""
-        sublime.status_message("jj: {0}".format(message))
+        sublime.status_message(f"jj: {message}")
 
 
 class JjTextCommand(sublime_plugin.TextCommand):
@@ -81,8 +81,8 @@ class JjTextCommand(sublime_plugin.TextCommand):
 
     def show_error(self, message):
         """Show an error message."""
-        sublime.error_message("SublimeJJ: {0}".format(message))
+        sublime.error_message(f"SublimeJJ: {message}")
 
     def show_status(self, message):
         """Show a status message."""
-        sublime.status_message("jj: {0}".format(message))
+        sublime.status_message(f"jj: {message}")

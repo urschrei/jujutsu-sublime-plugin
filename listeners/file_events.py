@@ -9,7 +9,7 @@ from ..core.repo import get_repo_manager
 from ..views.status_bar import update_status_bar
 
 
-class Debouncer(object):
+class Debouncer:
     """Simple debouncer for view updates."""
 
     def __init__(self, delay=0.5):
