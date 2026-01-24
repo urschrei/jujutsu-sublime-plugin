@@ -32,6 +32,9 @@ class ChangeInfo:
     is_immutable: bool
     is_working_copy: bool
     bookmarks: list = field(default_factory=list)
+    # Unique prefix highlighting
+    change_id_prefix: str = ""  # The unique prefix part
+    change_id_rest: str = ""  # The rest after the prefix
 
 
 @dataclass
@@ -92,7 +95,9 @@ class JJCli:
         'if(empty, "true", "false") ++ "|||" ++ '
         'if(immutable, "true", "false") ++ "|||" ++ '
         'if(self.contained_in("@"), "true", "false") ++ "|||" ++ '
-        'bookmarks.join(",")'
+        'bookmarks.join(",") ++ "|||" ++ '
+        'change_id.shortest(8).prefix() ++ "|||" ++ '
+        "change_id.shortest(8).rest()"
     )
 
     LOG_TEMPLATE = (
@@ -104,7 +109,9 @@ class JJCli:
         'if(empty, "true", "false") ++ "|||" ++ '
         'if(immutable, "true", "false") ++ "|||" ++ '
         'if(self.contained_in("@"), "true", "false") ++ "|||" ++ '
-        'bookmarks.join(",") ++ "\\n"'
+        'bookmarks.join(",") ++ "|||" ++ '
+        'change_id.shortest(8).prefix() ++ "|||" ++ '
+        'change_id.shortest(8).rest() ++ "\\n"'
     )
 
     def __init__(self, repo_root, jj_path=None):
@@ -568,6 +575,10 @@ class JJCli:
         if len(parts) < 9:
             return None
 
+        # Extract prefix/rest if available (fields 9 and 10)
+        change_id_prefix = parts[9] if len(parts) > 9 else parts[0]
+        change_id_rest = parts[10] if len(parts) > 10 else ""
+
         return ChangeInfo(
             change_id=parts[0],
             commit_id=parts[1],
@@ -578,6 +589,8 @@ class JJCli:
             is_immutable=parts[6] == "true",
             is_working_copy=parts[7] == "true",
             bookmarks=[b for b in parts[8].split(",") if b],
+            change_id_prefix=change_id_prefix,
+            change_id_rest=change_id_rest,
         )
 
     def _parse_git_diff(self, diff_output, target_file=None):
