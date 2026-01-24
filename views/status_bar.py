@@ -34,7 +34,7 @@ def update_status_bar(view):
             desc = desc[:37] + "..."
 
         empty_marker = " (empty)" if info.is_empty else ""
-        status = "jj: {0}{1} - {2}".format(info.change_id, empty_marker, desc)
+        status = f"jj: {info.change_id}{empty_marker} - {desc}"
         view.set_status("jj", status)
 
     cli.get_current_change(on_change_info)

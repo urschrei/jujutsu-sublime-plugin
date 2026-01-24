@@ -39,7 +39,7 @@ def plugin_loaded():
 
     # Log startup
     if settings.get("debug", False):
-        print("SublimeJJ {0} loaded".format(__version__))
+        print(f"SublimeJJ {__version__} loaded")
 
 
 def plugin_unloaded():

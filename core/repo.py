@@ -7,7 +7,7 @@ from .cache import repo_cache
 from .jj_cli import JJCli
 
 
-class RepoInfo(object):
+class RepoInfo:
     """Information about a jj repository."""
 
     def __init__(self, root, is_colocated):
@@ -15,7 +15,7 @@ class RepoInfo(object):
         self.is_colocated = is_colocated  # Has both .jj and .git
 
 
-class RepoManager(object):
+class RepoManager:
     """Manages repository detection and caching."""
 
     _instance = None
@@ -38,7 +38,7 @@ class RepoManager(object):
             return None
 
         # Check cache first
-        cache_key = "repo_root:{0}".format(file_path)
+        cache_key = f"repo_root:{file_path}"
         cached = repo_cache.get(cache_key)
         if cached is not None:
             return cached if cached != "none" else None
@@ -88,8 +88,8 @@ class RepoManager(object):
         """Invalidate cache for a file (call after modifications)."""
         repo_info = self.find_repo_root(file_path)
         if repo_info:
-            repo_cache.invalidate_prefix("diff:{0}".format(repo_info.root))
-            repo_cache.invalidate_prefix("status:{0}".format(repo_info.root))
+            repo_cache.invalidate_prefix(f"diff:{repo_info.root}")
+            repo_cache.invalidate_prefix(f"status:{repo_info.root}")
 
     def clear_caches(self):
         """Clear all caches."""
