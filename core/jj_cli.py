@@ -255,13 +255,19 @@ class JJCli:
             args.extend(["-m", message])
         self.run_async(args, on_result)
 
-    def describe(self, message, callback):
-        """Set description for current change."""
+    def describe(self, message, callback, revision=None):
+        """Set description for a change.
+
+        If revision is None, describes the current change (@).
+        """
 
         def on_result(result):
             callback(result.success, result.stderr if not result.success else "")
 
-        self.run_async(["describe", "-m", message], on_result)
+        args = ["describe", "-m", message]
+        if revision:
+            args.extend(["-r", revision])
+        self.run_async(args, on_result)
 
     def commit(self, message, callback):
         """Commit current change (describe + new)."""
