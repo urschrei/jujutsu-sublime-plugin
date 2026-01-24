@@ -1,0 +1,15 @@
+SublimeJJ
+=========
+
+Thank you for installing SublimeJJ!
+
+This plugin provides Jujutsu (jj) integration for Sublime Text. It is designed
+for colocated repositories where both .jj and .git exist.
+
+Requirements:
+- Jujutsu (jj) installed and available in PATH
+- A colocated jj repository (jj init --colocate)
+
+Commands are available via the command palette with the "JJ:" prefix.
+
+For documentation, see: https://github.com/shughes-uk/SublimeJJ

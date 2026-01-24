@@ -1,0 +1,42 @@
+[
+    // JJ: New Change
+    {
+        "keys": ["super+shift+n"],
+        "command": "jj_new",
+        "context": [
+            { "key": "setting.jj_enabled", "operator": "equal", "operand": true }
+        ]
+    },
+    // JJ: Commit
+    {
+        "keys": ["super+shift+c"],
+        "command": "jj_commit",
+        "context": [
+            { "key": "setting.jj_enabled", "operator": "equal", "operand": true }
+        ]
+    },
+    // JJ: Show Commit Graph
+    {
+        "keys": ["super+shift+g"],
+        "command": "jj_show_graph",
+        "context": [
+            { "key": "setting.jj_enabled", "operator": "equal", "operand": true }
+        ]
+    },
+    // JJ: Toggle Inline Diff
+    {
+        "keys": ["super+shift+d"],
+        "command": "jj_toggle_inline_diff",
+        "context": [
+            { "key": "setting.jj_enabled", "operator": "equal", "operand": true }
+        ]
+    },
+    // JJ: Undo
+    {
+        "keys": ["super+shift+z"],
+        "command": "jj_undo",
+        "context": [
+            { "key": "setting.jj_enabled", "operator": "equal", "operand": true }
+        ]
+    }
+]

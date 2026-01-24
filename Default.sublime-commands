@@ -1,0 +1,70 @@
+[
+    {
+        "caption": "JJ: New Change",
+        "command": "jj_new"
+    },
+    {
+        "caption": "JJ: Describe (Set Message)",
+        "command": "jj_describe"
+    },
+    {
+        "caption": "JJ: Commit",
+        "command": "jj_commit"
+    },
+    {
+        "caption": "JJ: Squash …",
+        "command": "jj_squash"
+    },
+    {
+        "caption": "JJ: Quick Squash",
+        "command": "jj_quick_squash"
+    },
+    {
+        "caption": "JJ: Abandon Change",
+        "command": "jj_abandon"
+    },
+    {
+        "caption": "JJ: Undo Last Operation",
+        "command": "jj_undo"
+    },
+    {
+        "caption": "JJ: Edit Change...",
+        "command": "jj_edit"
+    },
+    {
+        "caption": "JJ: Rebase...",
+        "command": "jj_rebase"
+    },
+    {
+        "caption": "JJ: Refresh Status",
+        "command": "jj_refresh"
+    },
+    {
+        "caption": "JJ: Log (Custom Revset)",
+        "command": "jj_log"
+    },
+    {
+        "caption": "JJ: Bookmark Set",
+        "command": "jj_bookmark_set"
+    },
+    {
+        "caption": "JJ: Bookmark Move",
+        "command": "jj_bookmark_move"
+    },
+    {
+        "caption": "JJ: Bookmark Delete",
+        "command": "jj_bookmark_delete"
+    },
+    {
+        "caption": "JJ: Bookmark Rename",
+        "command": "jj_bookmark_rename"
+    },
+    {
+        "caption": "JJ: Bookmark List",
+        "command": "jj_bookmark_list"
+    },
+    {
+        "caption": "JJ: Git Push (Create Bookmark)",
+        "command": "jj_git_push_change"
+    }
+]

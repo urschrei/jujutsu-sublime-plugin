@@ -1,0 +1,693 @@
+"""CLI wrapper for jj with async execution and output parsing."""
+
+import os
+import re
+import subprocess
+import threading
+
+import sublime
+
+
+class JJResult(object):
+    """Result of a jj command execution."""
+
+    def __init__(self, success, stdout, stderr, returncode):
+        self.success = success
+        self.stdout = stdout
+        self.stderr = stderr
+        self.returncode = returncode
+
+
+class ChangeInfo(object):
+    """Information about a jj change."""
+
+    def __init__(
+        self,
+        change_id,
+        commit_id,
+        description,
+        author,
+        timestamp,
+        is_empty,
+        is_immutable,
+        is_working_copy,
+        bookmarks,
+    ):
+        self.change_id = change_id
+        self.commit_id = commit_id
+        self.description = description
+        self.author = author
+        self.timestamp = timestamp
+        self.is_empty = is_empty
+        self.is_immutable = is_immutable
+        self.is_working_copy = is_working_copy
+        self.bookmarks = bookmarks
+
+
+class DiffHunk(object):
+    """Represents a diff hunk for gutter markers."""
+
+    def __init__(self, old_start, old_count, new_start, new_count, hunk_type, lines):
+        self.old_start = old_start
+        self.old_count = old_count
+        self.new_start = new_start
+        self.new_count = new_count
+        self.hunk_type = hunk_type  # 'added', 'modified', 'deleted'
+        self.lines = lines
+
+
+class BookmarkInfo(object):
+    """Information about a jj bookmark."""
+
+    def __init__(self, name, change_id, description):
+        self.name = name
+        self.change_id = change_id
+        self.description = description
+
+
+# Simple thread pool implementation for Python 3.3
+class SimpleThreadPool(object):
+    """Simple thread pool for async execution."""
+
+    def __init__(self, max_workers=4):
+        self._max_workers = max_workers
+
+    def submit(self, fn):
+        """Submit a function to be executed in a thread."""
+        thread = threading.Thread(target=fn)
+        thread.daemon = True
+        thread.start()
+        return thread
+
+    def shutdown(self, wait=False):
+        """Shutdown the thread pool (no-op for simple implementation)."""
+        pass
+
+
+_executor = SimpleThreadPool(max_workers=4)
+
+
+class JJCli(object):
+    """Wrapper for jj CLI commands."""
+
+    # Templates for machine-readable output
+    # Use ||| as separator to avoid tab/space conversion issues
+    FIELD_SEP = "|||"
+
+    STATUS_TEMPLATE = (
+        'change_id.short(8) ++ "|||" ++ '
+        'commit_id.short(8) ++ "|||" ++ '
+        'if(description, description.first_line(), "(no description)") ++ "|||" ++ '
+        'author.email() ++ "|||" ++ '
+        'committer.timestamp().format("%Y-%m-%d %H:%M") ++ "|||" ++ '
+        'if(empty, "true", "false") ++ "|||" ++ '
+        'if(immutable, "true", "false") ++ "|||" ++ '
+        'if(self.contained_in("@"), "true", "false") ++ "|||" ++ '
+        'bookmarks.join(",")'
+    )
+
+    LOG_TEMPLATE = (
+        'change_id.short(8) ++ "|||" ++ '
+        'commit_id.short(8) ++ "|||" ++ '
+        'if(description, description.first_line(), "(no description)") ++ "|||" ++ '
+        'author.email() ++ "|||" ++ '
+        'committer.timestamp().format("%Y-%m-%d %H:%M") ++ "|||" ++ '
+        'if(empty, "true", "false") ++ "|||" ++ '
+        'if(immutable, "true", "false") ++ "|||" ++ '
+        'if(self.contained_in("@"), "true", "false") ++ "|||" ++ '
+        'bookmarks.join(",") ++ "\\n"'
+    )
+
+    def __init__(self, repo_root, jj_path=None):
+        self.repo_root = repo_root
+        self.jj_path = jj_path or "jj"
+
+    def _run_sync(self, args, cwd=None, input_text=None):
+        """Run a jj command synchronously."""
+        cmd = [self.jj_path] + args
+        working_dir = cwd or self.repo_root
+
+        try:
+            env = os.environ.copy()
+            # Ensure consistent output format
+            env["NO_COLOR"] = "1"
+
+            process = subprocess.Popen(
+                cmd,
+                cwd=working_dir,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                stdin=subprocess.PIPE if input_text else None,
+                env=env,
+            )
+            stdout, stderr = process.communicate(
+                input=input_text.encode() if input_text else None, timeout=30
+            )
+            return JJResult(
+                success=process.returncode == 0,
+                stdout=stdout.decode("utf-8", errors="replace"),
+                stderr=stderr.decode("utf-8", errors="replace"),
+                returncode=process.returncode,
+            )
+        except subprocess.TimeoutExpired:
+            process.kill()
+            return JJResult(
+                success=False,
+                stdout="",
+                stderr="Command timed out",
+                returncode=-1,
+            )
+        except OSError:
+            return JJResult(
+                success=False,
+                stdout="",
+                stderr="jj executable not found: {0}".format(self.jj_path),
+                returncode=-1,
+            )
+        except Exception as e:
+            return JJResult(
+                success=False,
+                stdout="",
+                stderr=str(e),
+                returncode=-1,
+            )
+
+    def run_async(self, args, callback, cwd=None, input_text=None):
+        """Run a jj command asynchronously and call callback on main thread."""
+
+        def execute():
+            result = self._run_sync(args, cwd, input_text)
+            sublime.set_timeout(lambda: callback(result), 0)
+
+        _executor.submit(execute)
+
+    def run(self, args, cwd=None, input_text=None):
+        """Run a jj command synchronously (use sparingly)."""
+        return self._run_sync(args, cwd, input_text)
+
+    def get_current_change(self, callback):
+        """Get information about the current working copy change."""
+
+        def on_result(result):
+            if not result.success:
+                callback(None)
+                return
+
+            info = self._parse_change_info(result.stdout.strip())
+            callback(info)
+
+        self.run_async(
+            ["log", "-r", "@", "-T", self.STATUS_TEMPLATE, "--no-graph"], on_result
+        )
+
+    def get_log(self, callback, revset="::", limit=50):
+        """Get commit log."""
+
+        def on_result(result):
+            if not result.success:
+                callback([])
+                return
+
+            changes = []
+            for line in result.stdout.strip().split("\n"):
+                if line:
+                    info = self._parse_change_info(line)
+                    if info:
+                        changes.append(info)
+            callback(changes)
+
+        args = [
+            "log",
+            "-r",
+            revset,
+            "-T",
+            self.LOG_TEMPLATE,
+            "--no-graph",
+            "-n",
+            str(limit),
+        ]
+        self.run_async(args, on_result)
+
+    def get_diff(self, callback, file_path=None):
+        """Get diff for the working copy, optionally for a specific file."""
+
+        def on_result(result):
+            if not result.success:
+                callback([])
+                return
+
+            hunks = self._parse_git_diff(result.stdout, file_path)
+            callback(hunks)
+
+        args = ["diff", "--git"]
+        if file_path:
+            args.extend(["--", file_path])
+        self.run_async(args, on_result)
+
+    def get_file_diff(self, file_path, callback):
+        """Get diff for a specific file."""
+        self.get_diff(callback, file_path)
+
+    def new(self, callback, message=None):
+        """Create a new change."""
+
+        def on_result(result):
+            callback(result.success, result.stderr if not result.success else "")
+
+        args = ["new"]
+        if message:
+            args.extend(["-m", message])
+        self.run_async(args, on_result)
+
+    def describe(self, message, callback):
+        """Set description for current change."""
+
+        def on_result(result):
+            callback(result.success, result.stderr if not result.success else "")
+
+        self.run_async(["describe", "-m", message], on_result)
+
+    def commit(self, message, callback):
+        """Commit current change (describe + new)."""
+
+        def on_result(result):
+            callback(result.success, result.stderr if not result.success else "")
+
+        self.run_async(["commit", "-m", message], on_result)
+
+    def squash(self, callback):
+        """Squash current change into parent."""
+
+        def on_result(result):
+            callback(result.success, result.stderr if not result.success else "")
+
+        self.run_async(["squash"], on_result)
+
+    def squash_flexible(self, sources, destination, use_dest_message, callback):
+        """Flexible squash with multiple sources and destination.
+
+        sources: list of revision IDs to squash from
+        destination: revision ID to squash into
+        use_dest_message: if True, discard source messages and use destination's
+        """
+
+        def on_result(result):
+            callback(result.success, result.stderr if not result.success else "")
+
+        args = ["squash"]
+
+        # Add source revisions
+        for source in sources:
+            args.extend(["--from", source])
+
+        # Add destination
+        args.extend(["--into", destination])
+
+        # Optionally discard source messages
+        if use_dest_message:
+            args.append("--use-destination-message")
+
+        self.run_async(args, on_result)
+
+    def abandon(self, callback):
+        """Abandon current change."""
+
+        def on_result(result):
+            callback(result.success, result.stderr if not result.success else "")
+
+        self.run_async(["abandon"], on_result)
+
+    def undo(self, callback):
+        """Undo last operation."""
+
+        def on_result(result):
+            callback(result.success, result.stderr if not result.success else "")
+
+        self.run_async(["undo"], on_result)
+
+    def edit(self, revision, callback):
+        """Edit (checkout) a specific revision."""
+
+        def on_result(result):
+            callback(result.success, result.stderr if not result.success else "")
+
+        self.run_async(["edit", revision], on_result)
+
+    def rebase(self, revision, destination, callback):
+        """Rebase a revision onto a destination."""
+
+        def on_result(result):
+            callback(result.success, result.stderr if not result.success else "")
+
+        self.run_async(["rebase", "-r", revision, "-d", destination], on_result)
+
+    def rebase_source(self, source, destination, callback):
+        """Rebase a revision and its descendants onto a destination."""
+
+        def on_result(result):
+            callback(result.success, result.stderr if not result.success else "")
+
+        self.run_async(["rebase", "-s", source, "-d", destination], on_result)
+
+    def rebase_insert_before(self, revision, target, callback):
+        """Insert revision before target (make revision a parent of target)."""
+
+        def on_result(result):
+            callback(result.success, result.stderr if not result.success else "")
+
+        self.run_async(["rebase", "-r", revision, "--insert-before", target], on_result)
+
+    def rebase_insert_after(self, revision, target, callback):
+        """Insert revision after target (make revision a child of target)."""
+
+        def on_result(result):
+            callback(result.success, result.stderr if not result.success else "")
+
+        self.run_async(["rebase", "-r", revision, "--insert-after", target], on_result)
+
+    def rebase_flexible(self, source_mode, source_rev, dest_mode, dest_rev, callback):
+        """Flexible rebase with full mode control.
+
+        source_mode: 'revision' (-r), 'source' (-s), or 'branch' (-b)
+        dest_mode: 'onto' (-d), 'after' (-A), or 'before' (-B)
+        """
+
+        def on_result(result):
+            callback(result.success, result.stderr if not result.success else "")
+
+        args = ["rebase"]
+
+        # Source mode
+        if source_mode == "revision":
+            args.extend(["-r", source_rev])
+        elif source_mode == "source":
+            args.extend(["-s", source_rev])
+        elif source_mode == "branch":
+            args.extend(["-b", source_rev])
+
+        # Destination mode
+        if dest_mode == "onto":
+            args.extend(["-d", dest_rev])
+        elif dest_mode == "after":
+            args.extend(["-A", dest_rev])
+        elif dest_mode == "before":
+            args.extend(["-B", dest_rev])
+
+        self.run_async(args, on_result)
+
+    def get_diff_raw(self, callback, revision="@"):
+        """Get raw diff output for a revision."""
+
+        def on_result(result):
+            callback(result.success, result.stdout if result.success else result.stderr)
+
+        self.run_async(["diff", "-r", revision, "--git"], on_result)
+
+    # Bookmark template for machine-readable output
+    BOOKMARK_TEMPLATE = (
+        'name ++ "|||" ++ '
+        'if(normal_target, normal_target.change_id().short(8), "(deleted)") ++ "|||" ++ '
+        'if(normal_target, normal_target.description().first_line(), "") ++ "\\n"'
+    )
+
+    def bookmark_list(self, callback):
+        """Get list of bookmarks with their targets."""
+
+        def on_result(result):
+            if not result.success:
+                callback([])
+                return
+
+            bookmarks = []
+            for line in result.stdout.strip().split("\n"):
+                if line:
+                    parts = line.split(self.FIELD_SEP)
+                    if len(parts) >= 3:
+                        bookmarks.append(
+                            BookmarkInfo(
+                                name=parts[0],
+                                change_id=parts[1],
+                                description=parts[2] or "(no description)",
+                            )
+                        )
+            callback(bookmarks)
+
+        self.run_async(["bookmark", "list", "-T", self.BOOKMARK_TEMPLATE], on_result)
+
+    def bookmark_set(self, name, revision, callback):
+        """Create or update a bookmark (with --allow-backwards)."""
+
+        def on_result(result):
+            callback(result.success, result.stderr if not result.success else "")
+
+        args = ["bookmark", "set", name, "-r", revision, "-B"]
+        self.run_async(args, on_result)
+
+    def bookmark_move(self, name, revision, callback):
+        """Move an existing bookmark to a new revision."""
+
+        def on_result(result):
+            callback(result.success, result.stderr if not result.success else "")
+
+        args = ["bookmark", "move", name, "--to", revision, "-B"]
+        self.run_async(args, on_result)
+
+    def bookmark_delete(self, names, callback):
+        """Delete one or more bookmarks."""
+
+        def on_result(result):
+            callback(result.success, result.stderr if not result.success else "")
+
+        args = ["bookmark", "delete"] + list(names)
+        self.run_async(args, on_result)
+
+    def bookmark_rename(self, old_name, new_name, callback):
+        """Rename a bookmark."""
+
+        def on_result(result):
+            callback(result.success, result.stderr if not result.success else "")
+
+        args = ["bookmark", "rename", old_name, new_name]
+        self.run_async(args, on_result)
+
+    def git_push_change(self, revision, callback):
+        """Push a change by creating a bookmark (jj git push -c).
+
+        Callback receives (success, error, bookmark_name, pr_url).
+        """
+
+        def on_result(result):
+            bookmark_name = None
+            pr_url = None
+
+            # Parse output for bookmark name
+            # Format: "Creating bookmark X for revision Y"
+            output = result.stdout + result.stderr
+            for line in output.split("\n"):
+                if "Creating bookmark" in line or "bookmark" in line.lower():
+                    # Try to extract bookmark name
+                    match = re.search(r"Creating bookmark (\S+)", line)
+                    if match:
+                        bookmark_name = match.group(1)
+
+                # Look for GitHub PR URL
+                if "github.com" in line and "/pull/new/" in line:
+                    # Extract URL from line
+                    match = re.search(r"(https://github\.com/\S+/pull/new/\S+)", line)
+                    if match:
+                        pr_url = match.group(1)
+
+            callback(
+                result.success,
+                result.stderr if not result.success else "",
+                bookmark_name,
+                pr_url,
+            )
+
+        args = ["git", "push", "-c", revision]
+        self.run_async(args, on_result)
+
+    def split_with_diff(self, diff_content, callback):
+        """Split current change using diff content to select first part.
+
+        Uses a script as JJ_EDITOR that outputs the pre-selected diff content.
+        """
+
+        def on_result(result):
+            callback(result.success, result.stderr if not result.success else "")
+
+        # Pass the diff content via stdin, using a cat command as editor
+        # that reads from stdin
+        import tempfile
+
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".diff", delete=False
+        ) as temp_file:
+            temp_file.write(diff_content)
+            temp_path = temp_file.name
+
+        # Set JJ_EDITOR to cat the temp file
+        import os
+
+        env = os.environ.copy()
+        env["NO_COLOR"] = "1"
+        env["JJ_EDITOR"] = "cat {0}".format(temp_path)
+
+        # Run split command
+        def run_and_cleanup(result):
+            # Clean up temp file
+            try:
+                os.unlink(temp_path)
+            except OSError:
+                pass
+            callback(result.success, result.stderr if not result.success else "")
+
+        # Use a custom execution that includes the environment
+        import subprocess
+        import threading
+
+        def execute():
+            try:
+                process = subprocess.Popen(
+                    [self.jj_path, "split"],
+                    cwd=self.repo_root,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    env=env,
+                )
+                stdout, stderr = process.communicate(timeout=30)
+                result = JJResult(
+                    success=process.returncode == 0,
+                    stdout=stdout.decode("utf-8", errors="replace"),
+                    stderr=stderr.decode("utf-8", errors="replace"),
+                    returncode=process.returncode,
+                )
+                sublime.set_timeout(lambda: run_and_cleanup(result), 0)
+            except Exception as e:
+                result = JJResult(
+                    success=False, stdout="", stderr=str(e), returncode=-1
+                )
+                sublime.set_timeout(lambda: run_and_cleanup(result), 0)
+
+        thread = threading.Thread(target=execute)
+        thread.daemon = True
+        thread.start()
+
+    def _parse_change_info(self, line):
+        """Parse a line of template output into ChangeInfo."""
+        parts = line.split(self.FIELD_SEP)
+        if len(parts) < 9:
+            return None
+
+        return ChangeInfo(
+            change_id=parts[0],
+            commit_id=parts[1],
+            description=parts[2] or "(no description)",
+            author=parts[3],
+            timestamp=parts[4],
+            is_empty=parts[5] == "true",
+            is_immutable=parts[6] == "true",
+            is_working_copy=parts[7] == "true",
+            bookmarks=[b for b in parts[8].split(",") if b],
+        )
+
+    def _parse_git_diff(self, diff_output, target_file=None):
+        """Parse git-format diff output into hunks."""
+        hunks = []
+        current_file = None
+        in_hunk = False
+        current_hunk_lines = []
+        hunk_header = None
+
+        for line in diff_output.split("\n"):
+            # New file in diff
+            if line.startswith("diff --git"):
+                # Save any previous hunk
+                if hunk_header and (target_file is None or current_file == target_file):
+                    hunk = self._create_hunk(hunk_header, current_hunk_lines)
+                    if hunk:
+                        hunks.append(hunk)
+                current_hunk_lines = []
+                hunk_header = None
+                in_hunk = False
+
+                # Extract file path (format: diff --git a/path b/path)
+                parts = line.split(" ")
+                if len(parts) >= 4:
+                    current_file = parts[2][2:]  # Remove 'a/' prefix
+
+            # Hunk header
+            elif line.startswith("@@"):
+                # Save any previous hunk
+                if hunk_header and (target_file is None or current_file == target_file):
+                    hunk = self._create_hunk(hunk_header, current_hunk_lines)
+                    if hunk:
+                        hunks.append(hunk)
+                current_hunk_lines = []
+
+                # Parse hunk header: @@ -old_start,old_count +new_start,new_count @@
+                header_match = self._parse_hunk_header(line)
+                if header_match:
+                    hunk_header = header_match
+                    in_hunk = True
+                else:
+                    hunk_header = None
+                    in_hunk = False
+
+            # Hunk content
+            elif in_hunk and (
+                line.startswith("+") or line.startswith("-") or line.startswith(" ")
+            ):
+                current_hunk_lines.append(line)
+
+        # Don't forget the last hunk
+        if hunk_header and (target_file is None or current_file == target_file):
+            hunk = self._create_hunk(hunk_header, current_hunk_lines)
+            if hunk:
+                hunks.append(hunk)
+
+        return hunks
+
+    def _parse_hunk_header(self, line):
+        """Parse @@ -old_start,old_count +new_start,new_count @@ format."""
+        match = re.match(r"@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@", line)
+        if not match:
+            return None
+
+        old_start = int(match.group(1))
+        old_count = int(match.group(2)) if match.group(2) else 1
+        new_start = int(match.group(3))
+        new_count = int(match.group(4)) if match.group(4) else 1
+
+        return (old_start, old_count, new_start, new_count)
+
+    def _create_hunk(self, header, lines):
+        """Create a DiffHunk from parsed header and lines."""
+        old_start, old_count, new_start, new_count = header
+
+        # Determine hunk type
+        has_additions = any(line.startswith("+") for line in lines)
+        has_deletions = any(line.startswith("-") for line in lines)
+
+        if has_additions and has_deletions:
+            hunk_type = "modified"
+        elif has_additions:
+            hunk_type = "added"
+        elif has_deletions:
+            hunk_type = "deleted"
+        else:
+            return None
+
+        return DiffHunk(
+            old_start=old_start,
+            old_count=old_count,
+            new_start=new_start,
+            new_count=new_count,
+            hunk_type=hunk_type,
+            lines=lines,
+        )
+
+
+def shutdown_executor():
+    """Shutdown the thread pool executor."""
+    _executor.shutdown(wait=False)
