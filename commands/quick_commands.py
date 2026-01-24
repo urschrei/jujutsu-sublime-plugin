@@ -13,6 +13,29 @@ KIND_WORKING_COPY = (sublime.KIND_ID_FUNCTION, "@", "Working Copy")
 KIND_BOOKMARK = (sublime.KIND_ID_MARKUP, "B", "Bookmark")
 KIND_ACTION = (sublime.KIND_ID_SNIPPET, ">", "Action")
 
+# Highlight colour for unique prefix (uses theme accent colour)
+PREFIX_STYLE = 'style="color: color(var(--accent) blend(var(--foreground) 60%))"'
+
+
+def format_change_details(change):
+    """Format change details with highlighted unique prefix.
+
+    Returns HTML string with bold coloured prefix followed by description.
+    """
+    # Format the change ID with highlighted prefix
+    if change.change_id_prefix and change.change_id_rest:
+        change_id_html = (
+            f"<b {PREFIX_STYLE}>{change.change_id_prefix}</b>{change.change_id_rest}"
+        )
+    elif change.change_id_prefix:
+        # Prefix is the whole ID
+        change_id_html = f"<b {PREFIX_STYLE}>{change.change_id_prefix}</b>"
+    else:
+        # Fallback to full change_id
+        change_id_html = change.change_id
+
+    return f"{change_id_html} {change.description}"
+
 
 def refresh_all_views(window):
     """Refresh status bar for all views in a window."""
@@ -185,7 +208,7 @@ class JjSquashCommand(JjWindowCommand):
             items.append(
                 sublime.QuickPanelItem(
                     trigger=change.change_id,
-                    details=change.description,
+                    details=format_change_details(change),
                     annotation=" | ".join(annotations) if annotations else "",
                     kind=KIND_WORKING_COPY if change.is_working_copy else KIND_CHANGE,
                 )
@@ -242,7 +265,7 @@ class JjSquashCommand(JjWindowCommand):
             items.append(
                 sublime.QuickPanelItem(
                     trigger=change.change_id,
-                    details=change.description,
+                    details=format_change_details(change),
                     annotation=" | ".join(annotations) if annotations else "",
                     kind=KIND_WORKING_COPY if change.is_working_copy else KIND_CHANGE,
                 )
@@ -412,7 +435,7 @@ class JjEditCommand(JjWindowCommand):
                 items.append(
                     sublime.QuickPanelItem(
                         trigger=change.change_id,
-                        details=change.description,
+                        details=format_change_details(change),
                         annotation=" | ".join(annotations) if annotations else "",
                         kind=KIND_WORKING_COPY
                         if change.is_working_copy
@@ -496,7 +519,7 @@ class JjLogCommand(JjWindowCommand):
                 items.append(
                     sublime.QuickPanelItem(
                         trigger=change.change_id,
-                        details=change.description,
+                        details=format_change_details(change),
                         annotation=" | ".join(annotations) if annotations else "",
                         kind=KIND_WORKING_COPY
                         if change.is_working_copy
@@ -620,7 +643,7 @@ class JjRebaseCommand(JjWindowCommand):
                 items.append(
                     sublime.QuickPanelItem(
                         trigger=change.change_id,
-                        details=change.description,
+                        details=format_change_details(change),
                         annotation=" | ".join(annotations) if annotations else "",
                         kind=KIND_WORKING_COPY
                         if change.is_working_copy
@@ -687,7 +710,7 @@ class JjRebaseCommand(JjWindowCommand):
             items.append(
                 sublime.QuickPanelItem(
                     trigger=change.change_id,
-                    details=change.description,
+                    details=format_change_details(change),
                     annotation=" | ".join(annotations) if annotations else "",
                     kind=KIND_WORKING_COPY if change.is_working_copy else KIND_CHANGE,
                 )
@@ -773,7 +796,7 @@ class JjBookmarkSetCommand(JjWindowCommand):
                 items.append(
                     sublime.QuickPanelItem(
                         trigger=change.change_id,
-                        details=change.description,
+                        details=format_change_details(change),
                         annotation=" | ".join(annotations) if annotations else "",
                         kind=KIND_WORKING_COPY
                         if change.is_working_copy
@@ -863,7 +886,7 @@ class JjBookmarkMoveCommand(JjWindowCommand):
                 items.append(
                     sublime.QuickPanelItem(
                         trigger=change.change_id,
-                        details=change.description,
+                        details=format_change_details(change),
                         annotation=" | ".join(annotations) if annotations else "",
                         kind=KIND_WORKING_COPY
                         if change.is_working_copy
@@ -1149,7 +1172,7 @@ class JjGitPushChangeCommand(JjWindowCommand):
                 items.append(
                     sublime.QuickPanelItem(
                         trigger=change.change_id,
-                        details=change.description,
+                        details=format_change_details(change),
                         annotation=" | ".join(annotations) if annotations else "",
                         kind=KIND_WORKING_COPY
                         if change.is_working_copy
