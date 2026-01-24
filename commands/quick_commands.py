@@ -77,45 +77,115 @@ class JjNewCommand(JjWindowCommand):
 
 
 class JjDescribeCommand(JjWindowCommand):
-    """Set description for current change."""
+    """Set description for current or selected change."""
 
-    def run(self):
+    def run(self, mode=None):
         cli = self.get_cli()
         if cli is None:
             return
 
-        def on_change_info(info):
-            if info is None:
-                self.show_error("Could not get current change info")
+        self.cli = cli
+
+        if mode == "current":
+            cli.get_current_change(self._describe_change)
+        elif mode == "pick":
+            self._show_revision_picker()
+        else:
+            # Show choice picker
+            self._show_mode_picker()
+
+    def _show_mode_picker(self):
+        """Show picker to choose between current change or picking one."""
+        items = [
+            sublime.QuickPanelItem(
+                trigger="Current change",
+                details="Describe the working copy (@)",
+                kind=KIND_WORKING_COPY,
+            ),
+            sublime.QuickPanelItem(
+                trigger="Pick a change",
+                details="Choose from mutable changes",
+                kind=KIND_ACTION,
+            ),
+        ]
+
+        def on_select(idx):
+            if idx == 0:
+                self.cli.get_current_change(self._describe_change)
+            elif idx == 1:
+                self._show_revision_picker()
+
+        self.window.show_quick_panel(items, on_select)
+
+    def _show_revision_picker(self):
+        """Show picker to select a mutable revision to describe."""
+
+        def on_log(changes):
+            if not changes:
+                self.show_error("Could not get change log")
                 return
 
-            current_desc = (
-                info.description if info.description != "(no description)" else ""
-            )
+            self.changes = changes
+            items = []
+            for change in changes:
+                annotations = []
+                if change.is_empty:
+                    annotations.append("empty")
+                if change.bookmarks:
+                    annotations.append(", ".join(change.bookmarks))
 
-            def on_done(msg):
-                if not msg.strip():
-                    self.show_status("Description unchanged (empty input)")
+                items.append(
+                    sublime.QuickPanelItem(
+                        trigger=change.change_id,
+                        details=format_change_details(change),
+                        annotation=" | ".join(annotations) if annotations else "",
+                        kind=KIND_WORKING_COPY
+                        if change.is_working_copy
+                        else KIND_CHANGE,
+                    )
+                )
+
+            def on_select(idx):
+                if idx < 0:
                     return
+                self._describe_change(self.changes[idx])
 
-                def on_result(success, error):
-                    if success:
-                        self.show_status("Description updated")
-                        refresh_all_views(self.window)
-                    else:
-                        self.show_error(f"Failed to update description: {error}")
+            self.window.show_quick_panel(items, on_select)
 
-                cli.describe(msg, on_result)
+        self.cli.get_log(on_log, revset="mutable()", limit=50)
 
-            self.window.show_input_panel(
-                "Change description:",
-                current_desc,
-                on_done,
-                None,
-                None,
-            )
+    def _describe_change(self, info):
+        """Show input panel to describe the given change."""
+        if info is None:
+            self.show_error("Could not get change info")
+            return
 
-        cli.get_current_change(on_change_info)
+        self.selected_change = info
+        current_desc = (
+            info.description if info.description != "(no description)" else ""
+        )
+
+        def on_done(msg):
+            if not msg.strip():
+                self.show_status("Description unchanged (empty input)")
+                return
+
+            def on_result(success, error):
+                if success:
+                    self.show_status(f"Description updated for {info.change_id}")
+                    refresh_all_views(self.window)
+                else:
+                    self.show_error(f"Failed to update description: {error}")
+
+            self.cli.describe(msg, on_result, revision=info.change_id)
+
+        self.window.show_input_panel(
+            f"Description for {info.change_id}:",
+            current_desc,
+            on_done,
+            None,
+            None,
+        )
 
 
 class JjCommitCommand(JjWindowCommand):
