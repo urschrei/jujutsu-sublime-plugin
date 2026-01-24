@@ -12,4 +12,4 @@ Requirements:
 
 Commands are available via the command palette with the "JJ:" prefix.
 
-For documentation, see: https://github.com/shughes-uk/SublimeJJ
+For documentation, see: https://github.com/urschrei/SublimeJJ
