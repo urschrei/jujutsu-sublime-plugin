@@ -1,7 +1,7 @@
 """TTL cache for expensive jj operations."""
 
-import time
 import threading
+import time
 
 
 class TTLCache:

@@ -1,0 +1,8 @@
+{
+    "tests_dir": "tests",
+    "pattern": "test*.py",
+    "verbosity": 2,
+    "capture_console": true,
+    "failfast": false,
+    "reload_package_on_testing": true
+}
