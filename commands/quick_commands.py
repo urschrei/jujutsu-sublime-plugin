@@ -274,10 +274,15 @@ class JjSquashCommand(JjWindowCommand):
             if change.bookmarks:
                 annotations.append(", ".join(change.bookmarks))
 
+            # Bold the details if selected
+            details = format_change_details(change)
+            if is_selected:
+                details = f"<b>{details}</b>"
+
             items.append(
                 sublime.QuickPanelItem(
                     trigger=change.change_id,
-                    details=format_change_details(change),
+                    details=details,
                     annotation=" | ".join(annotations) if annotations else "",
                     kind=KIND_WORKING_COPY if change.is_working_copy else KIND_CHANGE,
                 )
@@ -1109,10 +1114,13 @@ class JjBookmarkDeleteCommand(JjWindowCommand):
         # Add bookmarks with selection indicators
         for bm in self.bookmarks:
             is_selected = bm.name in self.selected_bookmarks
+            details = f"{bm.change_id}: {bm.description}"
+            if is_selected:
+                details = f"<b>{details}</b>"
             items.append(
                 sublime.QuickPanelItem(
                     trigger=bm.name,
-                    details=f"{bm.change_id}: {bm.description}",
+                    details=details,
                     annotation="selected" if is_selected else "",
                     kind=KIND_BOOKMARK,
                 )
