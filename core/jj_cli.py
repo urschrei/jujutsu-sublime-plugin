@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import re
+import shlex
 import subprocess
 import tempfile
 from concurrent.futures import ThreadPoolExecutor
@@ -61,8 +62,24 @@ class BookmarkInfo:
     description: str
 
 
+# Compiled regex for hunk header parsing
+_HUNK_HEADER_RE = re.compile(r"@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@")
+
 _executor: ThreadPoolExecutor | None = None
 _generation: int = 0
+
+
+def _make_success_callback(callback):
+    """Create a standard callback handler for success/error results.
+
+    Returns a function that calls callback(success, error) where error is
+    empty string on success, or stderr on failure.
+    """
+
+    def on_result(result):
+        callback(result.success, result.stderr if not result.success else "")
+
+    return on_result
 
 
 def _get_executor() -> ThreadPoolExecutor:
@@ -251,44 +268,28 @@ class JJCli:
 
     def new(self, callback, message=None):
         """Create a new change."""
-
-        def on_result(result):
-            callback(result.success, result.stderr if not result.success else "")
-
         args = ["new"]
         if message:
             args.extend(["-m", message])
-        self.run_async(args, on_result)
+        self.run_async(args, _make_success_callback(callback))
 
     def describe(self, message, callback, revision=None):
         """Set description for a change.
 
         If revision is None, describes the current change (@).
         """
-
-        def on_result(result):
-            callback(result.success, result.stderr if not result.success else "")
-
         args = ["describe", "-m", message]
         if revision:
             args.extend(["-r", revision])
-        self.run_async(args, on_result)
+        self.run_async(args, _make_success_callback(callback))
 
     def commit(self, message, callback):
         """Commit current change (describe + new)."""
-
-        def on_result(result):
-            callback(result.success, result.stderr if not result.success else "")
-
-        self.run_async(["commit", "-m", message], on_result)
+        self.run_async(["commit", "-m", message], _make_success_callback(callback))
 
     def squash(self, callback):
         """Squash current change into parent."""
-
-        def on_result(result):
-            callback(result.success, result.stderr if not result.success else "")
-
-        self.run_async(["squash"], on_result)
+        self.run_async(["squash"], _make_success_callback(callback))
 
     def absorb(self, callback, from_rev=None):
         """Absorb changes into ancestor commits.
@@ -296,14 +297,10 @@ class JJCli:
         Moves changes from the source revision into the stack of mutable
         revisions where the corresponding lines were last modified.
         """
-
-        def on_result(result):
-            callback(result.success, result.stderr if not result.success else "")
-
         args = ["absorb"]
         if from_rev:
             args.extend(["--from", from_rev])
-        self.run_async(args, on_result)
+        self.run_async(args, _make_success_callback(callback))
 
     def squash_flexible(self, sources, destination, use_dest_message, callback):
         """Flexible squash with multiple sources and destination.
@@ -312,10 +309,6 @@ class JJCli:
         destination: revision ID to squash into
         use_dest_message: if True, discard source messages and use destination's
         """
-
-        def on_result(result):
-            callback(result.success, result.stderr if not result.success else "")
-
         args = ["squash"]
 
         # Add source revisions
@@ -329,63 +322,47 @@ class JJCli:
         if use_dest_message:
             args.append("--use-destination-message")
 
-        self.run_async(args, on_result)
+        self.run_async(args, _make_success_callback(callback))
 
     def abandon(self, callback):
         """Abandon current change."""
-
-        def on_result(result):
-            callback(result.success, result.stderr if not result.success else "")
-
-        self.run_async(["abandon"], on_result)
+        self.run_async(["abandon"], _make_success_callback(callback))
 
     def undo(self, callback):
         """Undo last operation."""
-
-        def on_result(result):
-            callback(result.success, result.stderr if not result.success else "")
-
-        self.run_async(["undo"], on_result)
+        self.run_async(["undo"], _make_success_callback(callback))
 
     def edit(self, revision, callback):
         """Edit (checkout) a specific revision."""
-
-        def on_result(result):
-            callback(result.success, result.stderr if not result.success else "")
-
-        self.run_async(["edit", revision], on_result)
+        self.run_async(["edit", revision], _make_success_callback(callback))
 
     def rebase(self, revision, destination, callback):
         """Rebase a revision onto a destination."""
-
-        def on_result(result):
-            callback(result.success, result.stderr if not result.success else "")
-
-        self.run_async(["rebase", "-r", revision, "-d", destination], on_result)
+        self.run_async(
+            ["rebase", "-r", revision, "-d", destination],
+            _make_success_callback(callback),
+        )
 
     def rebase_source(self, source, destination, callback):
         """Rebase a revision and its descendants onto a destination."""
-
-        def on_result(result):
-            callback(result.success, result.stderr if not result.success else "")
-
-        self.run_async(["rebase", "-s", source, "-d", destination], on_result)
+        self.run_async(
+            ["rebase", "-s", source, "-d", destination],
+            _make_success_callback(callback),
+        )
 
     def rebase_insert_before(self, revision, target, callback):
         """Insert revision before target (make revision a parent of target)."""
-
-        def on_result(result):
-            callback(result.success, result.stderr if not result.success else "")
-
-        self.run_async(["rebase", "-r", revision, "--insert-before", target], on_result)
+        self.run_async(
+            ["rebase", "-r", revision, "--insert-before", target],
+            _make_success_callback(callback),
+        )
 
     def rebase_insert_after(self, revision, target, callback):
         """Insert revision after target (make revision a child of target)."""
-
-        def on_result(result):
-            callback(result.success, result.stderr if not result.success else "")
-
-        self.run_async(["rebase", "-r", revision, "--insert-after", target], on_result)
+        self.run_async(
+            ["rebase", "-r", revision, "--insert-after", target],
+            _make_success_callback(callback),
+        )
 
     def rebase_flexible(self, source_mode, source_rev, dest_mode, dest_rev, callback):
         """Flexible rebase with full mode control.
@@ -393,10 +370,6 @@ class JJCli:
         source_mode: 'revision' (-r), 'source' (-s), or 'branch' (-b)
         dest_mode: 'onto' (-d), 'after' (-A), or 'before' (-B)
         """
-
-        def on_result(result):
-            callback(result.success, result.stderr if not result.success else "")
-
         args = ["rebase"]
 
         # Source mode
@@ -415,7 +388,7 @@ class JJCli:
         elif dest_mode == "before":
             args.extend(["-B", dest_rev])
 
-        self.run_async(args, on_result)
+        self.run_async(args, _make_success_callback(callback))
 
     def get_diff_raw(self, callback, revision="@"):
         """Get raw diff output for a revision."""
@@ -458,39 +431,23 @@ class JJCli:
 
     def bookmark_set(self, name, revision, callback):
         """Create or update a bookmark (with --allow-backwards)."""
-
-        def on_result(result):
-            callback(result.success, result.stderr if not result.success else "")
-
         args = ["bookmark", "set", name, "-r", revision, "-B"]
-        self.run_async(args, on_result)
+        self.run_async(args, _make_success_callback(callback))
 
     def bookmark_move(self, name, revision, callback):
         """Move an existing bookmark to a new revision."""
-
-        def on_result(result):
-            callback(result.success, result.stderr if not result.success else "")
-
         args = ["bookmark", "move", name, "--to", revision, "-B"]
-        self.run_async(args, on_result)
+        self.run_async(args, _make_success_callback(callback))
 
     def bookmark_delete(self, names, callback):
         """Delete one or more bookmarks."""
-
-        def on_result(result):
-            callback(result.success, result.stderr if not result.success else "")
-
         args = ["bookmark", "delete"] + list(names)
-        self.run_async(args, on_result)
+        self.run_async(args, _make_success_callback(callback))
 
     def bookmark_rename(self, old_name, new_name, callback):
         """Rename a bookmark."""
-
-        def on_result(result):
-            callback(result.success, result.stderr if not result.success else "")
-
         args = ["bookmark", "rename", old_name, new_name]
-        self.run_async(args, on_result)
+        self.run_async(args, _make_success_callback(callback))
 
     def git_push_change(self, revision, callback):
         """Push a change by creating a bookmark (jj git push -c).
@@ -531,11 +488,7 @@ class JJCli:
 
     def git_fetch(self, callback):
         """Fetch from git remote."""
-
-        def on_result(result):
-            callback(result.success, result.stderr if not result.success else "")
-
-        self.run_async(["git", "fetch"], on_result)
+        self.run_async(["git", "fetch"], _make_success_callback(callback))
 
     def rebase_stack_to_trunk(self, callback):
         """Rebase current stack onto trunk.
@@ -543,12 +496,8 @@ class JJCli:
         Runs: jj rebase -d trunk() -s roots(trunk()..stack(@))
         Requires trunk() and stack() revset aliases to be configured.
         """
-
-        def on_result(result):
-            callback(result.success, result.stderr if not result.success else "")
-
         args = ["rebase", "-d", "trunk()", "-s", "roots(trunk()..stack(@))"]
-        self.run_async(args, on_result)
+        self.run_async(args, _make_success_callback(callback))
 
     def split_with_diff(self, diff_content, callback):
         """Split current change using diff content to select first part.
@@ -565,7 +514,7 @@ class JJCli:
 
         env = os.environ.copy()
         env["NO_COLOR"] = "1"
-        env["JJ_EDITOR"] = f"cat {temp_path}"
+        env["JJ_EDITOR"] = f"cat {shlex.quote(temp_path)}"
 
         def run_and_cleanup(result):
             try:
@@ -695,7 +644,7 @@ class JJCli:
 
     def _parse_hunk_header(self, line):
         """Parse @@ -old_start,old_count +new_start,new_count @@ format."""
-        match = re.match(r"@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@", line)
+        match = _HUNK_HEADER_RE.match(line)
         if not match:
             return None
 

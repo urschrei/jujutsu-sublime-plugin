@@ -4,6 +4,7 @@ import webbrowser
 
 import sublime
 
+from ..core.formatting import format_change_details
 from ..views.status_bar import update_status_bar
 from .base import JjWindowCommand
 
@@ -13,23 +14,47 @@ KIND_WORKING_COPY = (sublime.KIND_ID_FUNCTION, "@", "Working Copy")
 KIND_BOOKMARK = (sublime.KIND_ID_MARKUP, "B", "Bookmark")
 KIND_ACTION = (sublime.KIND_ID_SNIPPET, ">", "Action")
 
+# Default limit for log queries
+DEFAULT_LOG_LIMIT = 50
 
-def format_change_details(change):
-    """Format change details with highlighted unique prefix.
 
-    Returns HTML string with underlined prefix followed by description.
+def build_change_annotations(change, include_immutable=True):
+    """Build annotation list for a change.
+
+    Returns a list of annotation strings for display in quick panels.
     """
-    # Format the change ID with highlighted prefix
-    if change.change_id_prefix and change.change_id_rest:
-        change_id_html = f"<u>{change.change_id_prefix}</u>{change.change_id_rest}"
-    elif change.change_id_prefix:
-        # Prefix is the whole ID
-        change_id_html = f"<u>{change.change_id_prefix}</u>"
-    else:
-        # Fallback to full change_id
-        change_id_html = change.change_id
+    annotations = []
+    if change.is_empty:
+        annotations.append("empty")
+    if include_immutable and change.is_immutable:
+        annotations.append("immutable")
+    if change.bookmarks:
+        annotations.append(", ".join(change.bookmarks))
+    return annotations
 
-    return f"{change_id_html} {change.description}"
+
+def build_change_quick_panel_item(
+    change, extra_annotations=None, include_immutable=True
+):
+    """Build a QuickPanelItem for a change.
+
+    Args:
+        change: ChangeInfo object
+        extra_annotations: Optional list of additional annotations to prepend
+        include_immutable: Whether to include 'immutable' in annotations
+
+    Returns:
+        sublime.QuickPanelItem configured for the change
+    """
+    annotations = extra_annotations[:] if extra_annotations else []
+    annotations.extend(build_change_annotations(change, include_immutable))
+
+    return sublime.QuickPanelItem(
+        trigger=change.change_id,
+        details=format_change_details(change),
+        annotation=" | ".join(annotations) if annotations else "",
+        kind=KIND_WORKING_COPY if change.is_working_copy else KIND_CHANGE,
+    )
 
 
 def refresh_all_views(window):
@@ -123,24 +148,10 @@ class JjDescribeCommand(JjWindowCommand):
                 return
 
             self.changes = changes
-            items = []
-            for change in changes:
-                annotations = []
-                if change.is_empty:
-                    annotations.append("empty")
-                if change.bookmarks:
-                    annotations.append(", ".join(change.bookmarks))
-
-                items.append(
-                    sublime.QuickPanelItem(
-                        trigger=change.change_id,
-                        details=format_change_details(change),
-                        annotation=" | ".join(annotations) if annotations else "",
-                        kind=KIND_WORKING_COPY
-                        if change.is_working_copy
-                        else KIND_CHANGE,
-                    )
-                )
+            items = [
+                build_change_quick_panel_item(change, include_immutable=False)
+                for change in changes
+            ]
 
             def on_select(idx):
                 if idx < 0:
@@ -151,7 +162,7 @@ class JjDescribeCommand(JjWindowCommand):
                 items, on_select, placeholder="Select change to describe"
             )
 
-        self.cli.get_log(on_log, revset="mutable()", limit=50)
+        self.cli.get_log(on_log, revset="mutable()", limit=DEFAULT_LOG_LIMIT)
 
     def _describe_change(self, info):
         """Show input panel to describe the given change."""
@@ -263,16 +274,9 @@ class JjSquashCommand(JjWindowCommand):
         for change in self.all_changes:
             is_selected = change.change_id in self.selected_sources
 
-            # Build annotation (right side)
-            annotations = []
-            if is_selected:
-                annotations.append("selected")
-            if change.is_empty:
-                annotations.append("empty")
-            if change.is_immutable:
-                annotations.append("immutable")
-            if change.bookmarks:
-                annotations.append(", ".join(change.bookmarks))
+            # Build annotation with optional "selected" prefix
+            extra = ["selected"] if is_selected else None
+            annotations = (extra or []) + build_change_annotations(change)
 
             # Bold the details if selected
             details = format_change_details(change)
@@ -332,23 +336,7 @@ class JjSquashCommand(JjWindowCommand):
             if change.change_id in self.selected_sources:
                 continue
 
-            # Build annotation
-            annotations = []
-            if change.is_empty:
-                annotations.append("empty")
-            if change.is_immutable:
-                annotations.append("immutable")
-            if change.bookmarks:
-                annotations.append(", ".join(change.bookmarks))
-
-            items.append(
-                sublime.QuickPanelItem(
-                    trigger=change.change_id,
-                    details=format_change_details(change),
-                    annotation=" | ".join(annotations) if annotations else "",
-                    kind=KIND_WORKING_COPY if change.is_working_copy else KIND_CHANGE,
-                )
-            )
+            items.append(build_change_quick_panel_item(change))
             valid_changes.append(change)
 
         if not items:
@@ -571,25 +559,10 @@ class JjEditCommand(JjWindowCommand):
                 self.show_error("Could not get change log")
                 return
 
-            items = []
-            for change in changes:
-                # Build annotation
-                annotations = []
-                if change.is_empty:
-                    annotations.append("empty")
-                if change.bookmarks:
-                    annotations.append(", ".join(change.bookmarks))
-
-                items.append(
-                    sublime.QuickPanelItem(
-                        trigger=change.change_id,
-                        details=format_change_details(change),
-                        annotation=" | ".join(annotations) if annotations else "",
-                        kind=KIND_WORKING_COPY
-                        if change.is_working_copy
-                        else KIND_CHANGE,
-                    )
-                )
+            items = [
+                build_change_quick_panel_item(change, include_immutable=False)
+                for change in changes
+            ]
 
             def on_select(idx):
                 if idx < 0:
@@ -614,7 +587,7 @@ class JjEditCommand(JjWindowCommand):
             )
 
         # Show all ancestors - editing immutable creates a new mutable copy
-        cli.get_log(on_log, revset="::", limit=50)
+        cli.get_log(on_log, revset="::", limit=DEFAULT_LOG_LIMIT)
 
 
 class JjRefreshCommand(JjWindowCommand):
@@ -655,27 +628,7 @@ class JjLogCommand(JjWindowCommand):
                 self.show_status(f"No changes match revset: {revset}")
                 return
 
-            items = []
-            for change in changes:
-                # Build annotation
-                annotations = []
-                if change.is_empty:
-                    annotations.append("empty")
-                if change.is_immutable:
-                    annotations.append("immutable")
-                if change.bookmarks:
-                    annotations.append(", ".join(change.bookmarks))
-
-                items.append(
-                    sublime.QuickPanelItem(
-                        trigger=change.change_id,
-                        details=format_change_details(change),
-                        annotation=" | ".join(annotations) if annotations else "",
-                        kind=KIND_WORKING_COPY
-                        if change.is_working_copy
-                        else KIND_CHANGE,
-                    )
-                )
+            items = [build_change_quick_panel_item(change) for change in changes]
 
             def on_select(idx):
                 if idx < 0:
@@ -785,22 +738,8 @@ class JjRebaseCommand(JjWindowCommand):
             # Track which index should be selected by default
             default_index = 0
             for i, change in enumerate(changes):
-                # Build annotation
-                annotations = []
-                if change.is_empty:
-                    annotations.append("empty")
-                if change.bookmarks:
-                    annotations.append(", ".join(change.bookmarks))
-
                 items.append(
-                    sublime.QuickPanelItem(
-                        trigger=change.change_id,
-                        details=format_change_details(change),
-                        annotation=" | ".join(annotations) if annotations else "",
-                        kind=KIND_WORKING_COPY
-                        if change.is_working_copy
-                        else KIND_CHANGE,
-                    )
+                    build_change_quick_panel_item(change, include_immutable=False)
                 )
                 # If @ is empty, default to the next one (@-)
                 if change.is_working_copy and change.is_empty and i + 1 < len(changes):
@@ -822,7 +761,7 @@ class JjRebaseCommand(JjWindowCommand):
             )
 
         # Only show mutable changes as rebase sources
-        self.cli.get_log(on_log, revset="mutable()", limit=50)
+        self.cli.get_log(on_log, revset="mutable()", limit=DEFAULT_LOG_LIMIT)
 
     def _step2_select_operation(self):
         """Step 2: Select the rebase operation type."""
@@ -877,23 +816,7 @@ class JjRebaseCommand(JjWindowCommand):
             if change.change_id in exclude_ids:
                 continue
 
-            # Build annotation
-            annotations = []
-            if change.is_empty:
-                annotations.append("empty")
-            if change.is_immutable:
-                annotations.append("immutable")
-            if change.bookmarks:
-                annotations.append(", ".join(change.bookmarks))
-
-            items.append(
-                sublime.QuickPanelItem(
-                    trigger=change.change_id,
-                    details=format_change_details(change),
-                    annotation=" | ".join(annotations) if annotations else "",
-                    kind=KIND_WORKING_COPY if change.is_working_copy else KIND_CHANGE,
-                )
-            )
+            items.append(build_change_quick_panel_item(change))
             valid_changes.append(change)
 
         if not items:
@@ -963,25 +886,10 @@ class JjBookmarkSetCommand(JjWindowCommand):
                 self.show_error("Could not get change log")
                 return
 
-            items = []
-            for change in changes:
-                # Build annotation
-                annotations = []
-                if change.is_empty:
-                    annotations.append("empty")
-                if change.bookmarks:
-                    annotations.append(", ".join(change.bookmarks))
-
-                items.append(
-                    sublime.QuickPanelItem(
-                        trigger=change.change_id,
-                        details=format_change_details(change),
-                        annotation=" | ".join(annotations) if annotations else "",
-                        kind=KIND_WORKING_COPY
-                        if change.is_working_copy
-                        else KIND_CHANGE,
-                    )
-                )
+            items = [
+                build_change_quick_panel_item(change, include_immutable=False)
+                for change in changes
+            ]
 
             def on_select(idx):
                 if idx < 0:
@@ -1004,7 +912,7 @@ class JjBookmarkSetCommand(JjWindowCommand):
                 items, on_select, placeholder="Select revision for bookmark"
             )
 
-        self.cli.get_log(on_log, revset="::", limit=50)
+        self.cli.get_log(on_log, revset="::", limit=DEFAULT_LOG_LIMIT)
 
 
 class JjBookmarkMoveCommand(JjWindowCommand):
@@ -1057,25 +965,10 @@ class JjBookmarkMoveCommand(JjWindowCommand):
                 self.show_error("Could not get change log")
                 return
 
-            items = []
-            for change in changes:
-                # Build annotation
-                annotations = []
-                if change.is_empty:
-                    annotations.append("empty")
-                if change.bookmarks:
-                    annotations.append(", ".join(change.bookmarks))
-
-                items.append(
-                    sublime.QuickPanelItem(
-                        trigger=change.change_id,
-                        details=format_change_details(change),
-                        annotation=" | ".join(annotations) if annotations else "",
-                        kind=KIND_WORKING_COPY
-                        if change.is_working_copy
-                        else KIND_CHANGE,
-                    )
-                )
+            items = [
+                build_change_quick_panel_item(change, include_immutable=False)
+                for change in changes
+            ]
 
             def on_select(idx):
                 if idx < 0:
@@ -1100,7 +993,7 @@ class JjBookmarkMoveCommand(JjWindowCommand):
                 items, on_select, placeholder="Select destination revision"
             )
 
-        self.cli.get_log(on_log, revset="::", limit=50)
+        self.cli.get_log(on_log, revset="::", limit=DEFAULT_LOG_LIMIT)
 
 
 class JjBookmarkDeleteCommand(JjWindowCommand):
@@ -1360,22 +1253,8 @@ class JjGitPushChangeCommand(JjWindowCommand):
             # Default to @- if @ is empty, otherwise @
             default_index = 0
             for i, change in enumerate(changes):
-                # Build annotation
-                annotations = []
-                if change.is_empty:
-                    annotations.append("empty")
-                if change.bookmarks:
-                    annotations.append(", ".join(change.bookmarks))
-
                 items.append(
-                    sublime.QuickPanelItem(
-                        trigger=change.change_id,
-                        details=format_change_details(change),
-                        annotation=" | ".join(annotations) if annotations else "",
-                        kind=KIND_WORKING_COPY
-                        if change.is_working_copy
-                        else KIND_CHANGE,
-                    )
+                    build_change_quick_panel_item(change, include_immutable=False)
                 )
                 # Default to @- if @ is empty
                 if change.is_working_copy and change.is_empty and i + 1 < len(changes):
@@ -1398,7 +1277,7 @@ class JjGitPushChangeCommand(JjWindowCommand):
             )
 
         # Only show mutable changes - can't push immutable commits
-        self.cli.get_log(on_log, revset="mutable()", limit=50)
+        self.cli.get_log(on_log, revset="mutable()", limit=DEFAULT_LOG_LIMIT)
 
     def _execute_push(self, change):
         """Execute the push and handle result."""

@@ -1,5 +1,6 @@
 """File event listeners with debouncing."""
 
+import threading
 import time
 
 import sublime
@@ -8,6 +9,9 @@ import sublime_plugin
 from ..core.repo import get_repo_manager
 from ..views.status_bar import update_status_bar
 
+# Settings file name
+SETTINGS_FILE = "SublimeJJ.sublime-settings"
+
 
 class Debouncer:
     """Simple debouncer for view updates."""
@@ -15,21 +19,24 @@ class Debouncer:
     def __init__(self, delay=0.5):
         self._delay = delay
         self._pending = {}
+        self._lock = threading.Lock()
 
     def should_run(self, view_id):
         """Check if enough time has passed to run the update."""
         now = time.time()
-        last_time = self._pending.get(view_id, 0)
+        with self._lock:
+            last_time = self._pending.get(view_id, 0)
 
-        if now - last_time >= self._delay:
-            self._pending[view_id] = now
-            return True
+            if now - last_time >= self._delay:
+                self._pending[view_id] = now
+                return True
         return False
 
     def schedule(self, view, callback):
         """Schedule a debounced callback."""
         view_id = view.id()
-        self._pending[view_id] = time.time()
+        with self._lock:
+            self._pending[view_id] = time.time()
 
         def run_if_ready():
             if self.should_run(view_id):
@@ -45,7 +52,7 @@ _debouncer = Debouncer()
 
 def get_debounce_delay():
     """Get the debounce delay from settings."""
-    settings = sublime.load_settings("SublimeJJ.sublime-settings")
+    settings = sublime.load_settings(SETTINGS_FILE)
     return settings.get("debounce_delay", 0.5)
 
 
@@ -61,7 +68,7 @@ class JjEventListener(sublime_plugin.EventListener):
         if view.settings().get("is_widget", False):
             return
 
-        settings = sublime.load_settings("SublimeJJ.sublime-settings")
+        settings = sublime.load_settings(SETTINGS_FILE)
 
         # Update status bar
         if settings.get("status_bar_enabled", True):
@@ -79,7 +86,7 @@ class JjEventListener(sublime_plugin.EventListener):
         # Invalidate cache for this file
         get_repo_manager().invalidate_file(file_path)
 
-        settings = sublime.load_settings("SublimeJJ.sublime-settings")
+        settings = sublime.load_settings(SETTINGS_FILE)
 
         # Debounced updates
         def do_update():
@@ -98,7 +105,7 @@ class JjEventListener(sublime_plugin.EventListener):
         if view.settings().get("is_widget", False):
             return
 
-        settings = sublime.load_settings("SublimeJJ.sublime-settings")
+        settings = sublime.load_settings(SETTINGS_FILE)
 
         if settings.get("status_bar_enabled", True):
             update_status_bar(view)
