@@ -390,7 +390,8 @@ class SplitSelectionState:
 
 # Regex for parsing diff components
 _DIFF_HEADER_RE = re.compile(r"^diff --git a/(.+) b/(.+)$")
-_HUNK_HEADER_RE = re.compile(r"^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@(.*)$")
+# Exported for use in jj_cli.py
+HUNK_HEADER_RE = re.compile(r"^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@(.*)$")
 
 
 def parse_diff(diff_text: str) -> SplitSelectionState:
@@ -444,7 +445,7 @@ def parse_diff(diff_text: str) -> SplitSelectionState:
                 continue
 
         # Check for hunk header
-        hunk_match = _HUNK_HEADER_RE.match(line)
+        hunk_match = HUNK_HEADER_RE.match(line)
         if hunk_match:
             # Save previous hunk if exists
             if current_hunk and current_file:
@@ -564,7 +565,7 @@ def generate_split_diff(state: SplitSelectionState) -> str:
 
 def _recalculate_hunk_header(original_header: str, filtered_lines: list[str]) -> str:
     """Recalculate the @@ header based on filtered content."""
-    match = _HUNK_HEADER_RE.match(original_header)
+    match = HUNK_HEADER_RE.match(original_header)
     if not match:
         return original_header
 

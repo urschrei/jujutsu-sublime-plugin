@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import re
 from typing import TYPE_CHECKING
 
 import sublime
 
 from ..core.diff_selection import (
+    LineType,
     generate_split_diff,
     parse_diff,
 )
@@ -80,13 +82,10 @@ class SplitViewManager:
             raise ValueError("No hunks found in diff")
 
         # Create the view
-        self.view = self._create_view(diff_text)
+        self.view = self._create_view()
 
         # Register globally
         _active_managers[self.view.id()] = self
-
-        # Map view lines to hunks/lines for navigation
-        self._build_line_map()
 
         # Render initial phantoms
         self._render_all_phantoms()
@@ -94,10 +93,8 @@ class SplitViewManager:
         # Position cursor on first hunk
         self._scroll_to_current()
 
-    def _create_view(self, diff_text: str) -> sublime.View:
+    def _create_view(self) -> sublime.View:
         """Create a scratch view with simplified hunk listing."""
-        _ = diff_text  # We use self.state instead
-
         view = self.window.new_file()
 
         # Configure as scratch view
@@ -166,7 +163,6 @@ class SplitViewManager:
 
     def _extract_line_range(self, header: str) -> str:
         """Extract human-readable line info from hunk header."""
-        import re
 
         match = re.match(r"@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@", header)
         if not match:
@@ -181,26 +177,15 @@ class SplitViewManager:
         else:
             return f"lines {new_start}-{new_start + new_count - 1}"
 
-    def _build_line_map(self) -> None:
-        """Line mapping is now done in _generate_view_content."""
-        # View line numbers are set during content generation
-        pass
-
     def _render_all_phantoms(self) -> None:
         """Render all phantoms (headers, line indicators, help bar)."""
         self._render_hunk_headers()
         self._render_line_indicators()
         self._render_help_bar()
         self._colour_diff_lines()
-        self._update_folding()
-
-    def _update_folding(self) -> None:
-        """No longer needed - content is regenerated on expand/collapse."""
-        pass
 
     def _colour_diff_lines(self) -> None:
         """Apply colour to diff lines and highlight focused line."""
-        from ..core.diff_selection import LineType
 
         addition_regions = []
         deletion_regions = []
@@ -288,7 +273,8 @@ class SplitViewManager:
         # Create or update phantom set
         phantom_set = sublime.PhantomSet(self.view, self.PHANTOM_KEY_HEADERS)
         phantom_set.update(phantoms)
-        # Store reference to prevent GC
+        # Store reference to prevent garbage collection - Sublime's PhantomSet
+        # must remain referenced or phantoms disappear
         self._header_phantom_set = phantom_set
 
     def _render_line_indicators(self) -> None:
@@ -335,6 +321,7 @@ class SplitViewManager:
 
         phantom_set = sublime.PhantomSet(self.view, self.PHANTOM_KEY_LINES)
         phantom_set.update(phantoms)
+        # Keep reference to prevent GC (see _render_hunk_headers)
         self._line_phantom_set = phantom_set
 
     def _render_help_bar(self) -> None:
@@ -354,6 +341,7 @@ class SplitViewManager:
                 )
             ]
         )
+        # Keep reference to prevent GC (see _render_hunk_headers)
         self._help_phantom_set = phantom_set
 
     def _scroll_to_current(self) -> None:
