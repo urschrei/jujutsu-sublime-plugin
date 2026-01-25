@@ -13,23 +13,18 @@ KIND_WORKING_COPY = (sublime.KIND_ID_FUNCTION, "@", "Working Copy")
 KIND_BOOKMARK = (sublime.KIND_ID_MARKUP, "B", "Bookmark")
 KIND_ACTION = (sublime.KIND_ID_SNIPPET, ">", "Action")
 
-# Highlight colour for unique prefix
-PREFIX_STYLE = 'style="color: #e0a050"'
-
 
 def format_change_details(change):
     """Format change details with highlighted unique prefix.
 
-    Returns HTML string with bold coloured prefix followed by description.
+    Returns HTML string with underlined prefix followed by description.
     """
     # Format the change ID with highlighted prefix
     if change.change_id_prefix and change.change_id_rest:
-        change_id_html = (
-            f"<b {PREFIX_STYLE}>{change.change_id_prefix}</b>{change.change_id_rest}"
-        )
+        change_id_html = f"<u>{change.change_id_prefix}</u>{change.change_id_rest}"
     elif change.change_id_prefix:
         # Prefix is the whole ID
-        change_id_html = f"<b {PREFIX_STYLE}>{change.change_id_prefix}</b>"
+        change_id_html = f"<u>{change.change_id_prefix}</u>"
     else:
         # Fallback to full change_id
         change_id_html = change.change_id
