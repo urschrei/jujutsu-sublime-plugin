@@ -77,6 +77,17 @@ All commands are available via the command palette (Ctrl+Shift+P / Cmd+Shift+P) 
 | Command | Description |
 |---------|-------------|
 | **JJ: Git Push (Create Bookmark)** | Push a change by creating a bookmark (`jj git push -c`), with optional GitHub PR URL detection |
+| **JJ: Pull and Retrunk** | Fetch from default remote and rebase current stack onto trunk (requires revset aliases, see below) |
+
+#### Pull and Retrunk
+
+The "Pull and Retrunk" command runs `jj git fetch` followed by `jj rebase -d trunk() -s roots(trunk()..stack(@))`. This requires the following revset aliases in your jj config:
+
+```toml
+[revset-aliases]
+'trunk()' = 'latest((present(main) | present(master)) & remote_bookmarks())'
+'stack()' = 'stack(@)'
+```
 
 ## Settings
 
@@ -124,6 +135,7 @@ SublimeJJ does not define default key bindings. To add your own, go to `Preferen
 - `jj_absorb`
 - `jj_abandon`
 - `jj_undo`
+- `jj_pull_retrunk`
 - `jj_edit`
 - `jj_log`
 - `jj_rebase`

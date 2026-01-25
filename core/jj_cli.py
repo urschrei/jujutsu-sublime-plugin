@@ -524,6 +524,27 @@ class JJCli:
         args = ["git", "push", "-c", revision]
         self.run_async(args, on_result)
 
+    def git_fetch(self, callback):
+        """Fetch from git remote."""
+
+        def on_result(result):
+            callback(result.success, result.stderr if not result.success else "")
+
+        self.run_async(["git", "fetch"], on_result)
+
+    def rebase_stack_to_trunk(self, callback):
+        """Rebase current stack onto trunk.
+
+        Runs: jj rebase -d trunk() -s roots(trunk()..stack(@))
+        Requires trunk() and stack() revset aliases to be configured.
+        """
+
+        def on_result(result):
+            callback(result.success, result.stderr if not result.success else "")
+
+        args = ["rebase", "-d", "trunk()", "-s", "roots(trunk()..stack(@))"]
+        self.run_async(args, on_result)
+
     def split_with_diff(self, diff_content, callback):
         """Split current change using diff content to select first part.
 
