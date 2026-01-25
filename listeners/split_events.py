@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
+import sublime
 import sublime_plugin
 
 from ..views.split_selection import get_manager_for_view, is_split_view
-
-print("[SublimeJJ] split_events.py loaded")
 
 
 class SplitViewEventListener(sublime_plugin.ViewEventListener):
@@ -68,7 +67,6 @@ class SplitViewInputHandler(sublime_plugin.EventListener):
 
         Allows keybindings to check if we're in a split view.
         """
-        import sublime
 
         if key == "jj_split_view":
             is_split = is_split_view(view)

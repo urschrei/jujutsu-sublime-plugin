@@ -12,6 +12,8 @@ from dataclasses import dataclass, field
 
 import sublime
 
+from .diff_selection import HUNK_HEADER_RE
+
 
 @dataclass
 class JJResult:
@@ -61,9 +63,6 @@ class BookmarkInfo:
     change_id: str
     description: str
 
-
-# Compiled regex for hunk header parsing
-_HUNK_HEADER_RE = re.compile(r"@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@")
 
 _executor: ThreadPoolExecutor | None = None
 _generation: int = 0
@@ -499,13 +498,22 @@ class JJCli:
         args = ["rebase", "-d", "trunk()", "-s", "roots(trunk()..stack(@))"]
         self.run_async(args, _make_success_callback(callback))
 
-    def split_with_diff(self, diff_content, callback):
-        """Split current change using diff content to select first part.
+    def _run_with_diff_editor(self, diff_content, jj_args, callback):
+        """Run a jj command with a diff editor script.
+
+        Creates a shell script that applies the given diff and uses it as the
+        diff editor for jj commands like split and squash --interactive.
 
         jj's diff editor receives two directories: left (original) and right (changed).
-        We create a script that:
+        The script:
         1. Copies left to right (baseline - deselects all changes)
-        2. Applies our selected diff using patch
+        2. Applies the selected diff using patch
+
+        Args:
+            diff_content: The diff to apply
+            jj_args: Additional jj command arguments (e.g., ["split"] or
+                     ["squash", "--interactive", "--from", "@", "--into", "@-"])
+            callback: Called with (success, error_message)
         """
         task_generation = _generation
 
@@ -537,121 +545,20 @@ exit 0
 
         os.chmod(script_path, 0o755)
 
+        def cleanup_temp_files():
+            for path in (diff_path, script_path):
+                try:
+                    os.unlink(path)
+                except OSError:
+                    pass
+
         def run_and_cleanup(result):
-            try:
-                os.unlink(diff_path)
-            except OSError:
-                pass
-            try:
-                os.unlink(script_path)
-            except OSError:
-                pass
+            cleanup_temp_files()
             callback(result.success, result.stderr if not result.success else "")
 
         def execute():
             try:
-                process = subprocess.Popen(
-                    [self.jj_path, "split", "--tool", script_path],
-                    cwd=self.repo_root,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    stdin=subprocess.DEVNULL,
-                    env={**os.environ, "NO_COLOR": "1"},
-                )
-                stdout, stderr = process.communicate(timeout=30)
-                result = JJResult(
-                    success=process.returncode == 0,
-                    stdout=stdout.decode("utf-8", errors="replace"),
-                    stderr=stderr.decode("utf-8", errors="replace"),
-                    returncode=process.returncode,
-                )
-                if task_generation == _generation:
-                    sublime.set_timeout(lambda: run_and_cleanup(result), 0)
-                else:
-                    # Still clean up temp files even if callback is stale
-                    try:
-                        os.unlink(diff_path)
-                        os.unlink(script_path)
-                    except OSError:
-                        pass
-            except Exception as e:
-                result = JJResult(
-                    success=False, stdout="", stderr=str(e), returncode=-1
-                )
-                if task_generation == _generation:
-                    sublime.set_timeout(lambda: run_and_cleanup(result), 0)
-                else:
-                    try:
-                        os.unlink(diff_path)
-                        os.unlink(script_path)
-                    except OSError:
-                        pass
-
-        _get_executor().submit(execute)
-
-    def squash_interactive(self, diff_content, source, destination, callback):
-        """Squash selected changes from source into destination.
-
-        Uses the same diff editor protocol as split_with_diff.
-
-        Args:
-            diff_content: The diff representing selected changes
-            source: Source revision to squash from
-            destination: Destination revision to squash into
-            callback: Called with (success, error_message)
-        """
-        task_generation = _generation
-
-        # Create temp file for the diff
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".diff", delete=False
-        ) as diff_file:
-            diff_file.write(diff_content)
-            diff_path = diff_file.name
-
-        # Create a shell script that acts as the diff editor
-        script_content = f"""#!/bin/bash
-LEFT="$1"
-RIGHT="$2"
-# Copy left to right (baseline - deselects all changes)
-rm -rf "$RIGHT"/*
-cp -r "$LEFT"/* "$RIGHT"/ 2>/dev/null || true
-# Apply selected diff to right directory
-patch -d "$RIGHT" -p1 --no-backup-if-mismatch < {shlex.quote(diff_path)} 2>/dev/null
-exit 0
-"""
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".sh", delete=False
-        ) as script_file:
-            script_file.write(script_content)
-            script_path = script_file.name
-
-        os.chmod(script_path, 0o755)
-
-        def run_and_cleanup(result):
-            try:
-                os.unlink(diff_path)
-            except OSError:
-                pass
-            try:
-                os.unlink(script_path)
-            except OSError:
-                pass
-            callback(result.success, result.stderr if not result.success else "")
-
-        def execute():
-            try:
-                cmd = [
-                    self.jj_path,
-                    "squash",
-                    "--interactive",
-                    "--from",
-                    source,
-                    "--into",
-                    destination,
-                    "--tool",
-                    script_path,
-                ]
+                cmd = [self.jj_path] + jj_args + ["--tool", script_path]
                 process = subprocess.Popen(
                     cmd,
                     cwd=self.repo_root,
@@ -670,11 +577,19 @@ exit 0
                 if task_generation == _generation:
                     sublime.set_timeout(lambda: run_and_cleanup(result), 0)
                 else:
-                    try:
-                        os.unlink(diff_path)
-                        os.unlink(script_path)
-                    except OSError:
-                        pass
+                    cleanup_temp_files()
+            except subprocess.TimeoutExpired:
+                process.kill()
+                result = JJResult(
+                    success=False,
+                    stdout="",
+                    stderr="Command timed out",
+                    returncode=-1,
+                )
+                if task_generation == _generation:
+                    sublime.set_timeout(lambda: run_and_cleanup(result), 0)
+                else:
+                    cleanup_temp_files()
             except Exception as e:
                 result = JJResult(
                     success=False, stdout="", stderr=str(e), returncode=-1
@@ -682,13 +597,28 @@ exit 0
                 if task_generation == _generation:
                     sublime.set_timeout(lambda: run_and_cleanup(result), 0)
                 else:
-                    try:
-                        os.unlink(diff_path)
-                        os.unlink(script_path)
-                    except OSError:
-                        pass
+                    cleanup_temp_files()
 
         _get_executor().submit(execute)
+
+    def split_with_diff(self, diff_content, callback):
+        """Split current change using diff content to select first part."""
+        self._run_with_diff_editor(diff_content, ["split"], callback)
+
+    def squash_interactive(self, diff_content, source, destination, callback):
+        """Squash selected changes from source into destination.
+
+        Args:
+            diff_content: The diff representing selected changes
+            source: Source revision to squash from
+            destination: Destination revision to squash into
+            callback: Called with (success, error_message)
+        """
+        self._run_with_diff_editor(
+            diff_content,
+            ["squash", "--interactive", "--from", source, "--into", destination],
+            callback,
+        )
 
     def _parse_change_info(self, line):
         """Parse a line of template output into ChangeInfo."""
@@ -773,7 +703,7 @@ exit 0
 
     def _parse_hunk_header(self, line):
         """Parse @@ -old_start,old_count +new_start,new_count @@ format."""
-        match = _HUNK_HEADER_RE.match(line)
+        match = HUNK_HEADER_RE.match(line)
         if not match:
             return None
 

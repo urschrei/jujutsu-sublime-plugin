@@ -6,7 +6,23 @@ import sublime_plugin
 from ..core.repo import get_repo_manager
 
 
-class JjWindowCommand(sublime_plugin.WindowCommand):
+class JjCommandMixin:
+    """Mixin providing shared functionality for jj commands."""
+
+    def is_enabled(self):
+        """Command is enabled only in jj repositories."""
+        return self.get_cli() is not None
+
+    def show_error(self, message):
+        """Show an error message."""
+        sublime.error_message(f"SublimeJJ: {message}")
+
+    def show_status(self, message):
+        """Show a status message."""
+        sublime.status_message(f"jj: {message}")
+
+
+class JjWindowCommand(JjCommandMixin, sublime_plugin.WindowCommand):
     """Base class for jj window commands."""
 
     def get_cli(self):
@@ -42,20 +58,8 @@ class JjWindowCommand(sublime_plugin.WindowCommand):
         repo_info = get_repo_manager().find_repo_root(file_path)
         return repo_info.root if repo_info else None
 
-    def is_enabled(self):
-        """Command is enabled only in jj repositories."""
-        return self.get_cli() is not None
 
-    def show_error(self, message):
-        """Show an error message."""
-        sublime.error_message(f"SublimeJJ: {message}")
-
-    def show_status(self, message):
-        """Show a status message."""
-        sublime.status_message(f"jj: {message}")
-
-
-class JjTextCommand(sublime_plugin.TextCommand):
+class JjTextCommand(JjCommandMixin, sublime_plugin.TextCommand):
     """Base class for jj text commands."""
 
     def get_cli(self):
@@ -74,15 +78,3 @@ class JjTextCommand(sublime_plugin.TextCommand):
 
         repo_info = get_repo_manager().find_repo_root(file_path)
         return repo_info.root if repo_info else None
-
-    def is_enabled(self):
-        """Command is enabled only in jj repositories."""
-        return self.get_cli() is not None
-
-    def show_error(self, message):
-        """Show an error message."""
-        sublime.error_message(f"SublimeJJ: {message}")
-
-    def show_status(self, message):
-        """Show a status message."""
-        sublime.status_message(f"jj: {message}")
