@@ -110,7 +110,9 @@ class JjDescribeCommand(JjWindowCommand):
             elif idx == 1:
                 self._show_revision_picker()
 
-        self.window.show_quick_panel(items, on_select)
+        self.window.show_quick_panel(
+            items, on_select, placeholder="Describe which change?"
+        )
 
     def _show_revision_picker(self):
         """Show picker to select a mutable revision to describe."""
@@ -145,7 +147,9 @@ class JjDescribeCommand(JjWindowCommand):
                     return
                 self._describe_change(self.changes[idx])
 
-            self.window.show_quick_panel(items, on_select)
+            self.window.show_quick_panel(
+                items, on_select, placeholder="Select change to describe"
+            )
 
         self.cli.get_log(on_log, revset="mutable()", limit=50)
 
@@ -306,7 +310,12 @@ class JjSquashCommand(JjWindowCommand):
                     new_idx = idx - 1  # "Done" option was removed
                 self._step1_show_source_picker(restore_index=new_idx)
 
-        self.window.show_quick_panel(items, on_select, selected_index=restore_index)
+        self.window.show_quick_panel(
+            items,
+            on_select,
+            selected_index=restore_index,
+            placeholder="Select changes to squash (toggle selection)",
+        )
 
     def _step2_select_destination(self):
         """Step 2: Select destination change to squash into."""
@@ -347,7 +356,9 @@ class JjSquashCommand(JjWindowCommand):
             self.selected_destination = valid_changes[idx]
             self._step3_message_option()
 
-        self.window.show_quick_panel(items, on_select)
+        self.window.show_quick_panel(
+            items, on_select, placeholder="Select destination to squash into"
+        )
 
     def _step3_message_option(self):
         """Step 3: Ask about commit message handling."""
@@ -370,7 +381,9 @@ class JjSquashCommand(JjWindowCommand):
             use_dest_message = idx == 1
             self._execute_squash(use_dest_message)
 
-        self.window.show_quick_panel(items, on_select)
+        self.window.show_quick_panel(
+            items, on_select, placeholder="Commit message handling"
+        )
 
     def _execute_squash(self, use_dest_message):
         """Execute the squash with selected options."""
@@ -486,6 +499,7 @@ class JjAbandonCommand(JjWindowCommand):
                 ),
             ],
             lambda idx: on_confirm(idx == 0),
+            placeholder="Confirm abandon?",
         )
 
 
@@ -558,7 +572,9 @@ class JjEditCommand(JjWindowCommand):
 
                 cli.edit(selected.change_id, on_result)
 
-            self.window.show_quick_panel(items, on_select)
+            self.window.show_quick_panel(
+                items, on_select, placeholder="Select change to edit"
+            )
 
         # Show all ancestors - editing immutable creates a new mutable copy
         cli.get_log(on_log, revset="::", limit=50)
@@ -642,7 +658,9 @@ class JjLogCommand(JjWindowCommand):
 
                 self.cli.edit(selected.change_id, on_result)
 
-            self.window.show_quick_panel(items, on_select)
+            self.window.show_quick_panel(
+                items, on_select, placeholder="Select change to edit"
+            )
 
         self.cli.get_log(on_log, revset=revset, limit=100)
 
@@ -759,7 +777,12 @@ class JjRebaseCommand(JjWindowCommand):
                 self.selected_source = changes[idx]
                 self._step2_select_operation()
 
-            self.window.show_quick_panel(items, on_select, selected_index=default_index)
+            self.window.show_quick_panel(
+                items,
+                on_select,
+                selected_index=default_index,
+                placeholder="Select revision to begin rebasing",
+            )
 
         # Only show mutable changes as rebase sources
         self.cli.get_log(on_log, revset="mutable()", limit=50)
@@ -802,7 +825,9 @@ class JjRebaseCommand(JjWindowCommand):
             self.selected_operation = self.OPERATIONS[idx]
             self._step3_select_destination()
 
-        self.window.show_quick_panel(items, on_select)
+        self.window.show_quick_panel(
+            items, on_select, placeholder="Select rebase operation"
+        )
 
     def _step3_select_destination(self):
         """Step 3: Select the destination revision."""
@@ -844,7 +869,7 @@ class JjRebaseCommand(JjWindowCommand):
             dest = valid_changes[idx]
             self._execute_rebase(dest)
 
-        self.window.show_quick_panel(items, on_select)
+        self.window.show_quick_panel(items, on_select, placeholder="Select destination")
 
     def _execute_rebase(self, dest):
         """Execute the rebase with selected options."""
@@ -938,7 +963,9 @@ class JjBookmarkSetCommand(JjWindowCommand):
 
                 self.cli.bookmark_set(self.bookmark_name, selected.change_id, on_result)
 
-            self.window.show_quick_panel(items, on_select)
+            self.window.show_quick_panel(
+                items, on_select, placeholder="Select revision for bookmark"
+            )
 
         self.cli.get_log(on_log, revset="::", limit=50)
 
@@ -979,7 +1006,9 @@ class JjBookmarkMoveCommand(JjWindowCommand):
                 self.selected_bookmark = bookmarks[idx]
                 self._step2_select_revision()
 
-            self.window.show_quick_panel(items, on_select)
+            self.window.show_quick_panel(
+                items, on_select, placeholder="Select bookmark to move"
+            )
 
         self.cli.bookmark_list(on_bookmarks)
 
@@ -1030,7 +1059,9 @@ class JjBookmarkMoveCommand(JjWindowCommand):
                     self.selected_bookmark.name, selected.change_id, on_result
                 )
 
-            self.window.show_quick_panel(items, on_select)
+            self.window.show_quick_panel(
+                items, on_select, placeholder="Select destination revision"
+            )
 
         self.cli.get_log(on_log, revset="::", limit=50)
 
@@ -1112,7 +1143,12 @@ class JjBookmarkDeleteCommand(JjWindowCommand):
                     new_idx = idx - 1
                 self._show_bookmark_picker(restore_index=new_idx)
 
-        self.window.show_quick_panel(items, on_select, selected_index=restore_index)
+        self.window.show_quick_panel(
+            items,
+            on_select,
+            selected_index=restore_index,
+            placeholder="Select bookmarks to delete (toggle selection)",
+        )
 
     def _confirm_delete(self):
         """Confirm deletion of selected bookmarks."""
@@ -1135,6 +1171,7 @@ class JjBookmarkDeleteCommand(JjWindowCommand):
         self.window.show_quick_panel(
             [msg, "Cancel"],
             on_confirm,
+            placeholder="Confirm deletion",
         )
 
 
@@ -1173,7 +1210,9 @@ class JjBookmarkRenameCommand(JjWindowCommand):
                 self.old_bookmark = bookmarks[idx]
                 self._step2_enter_new_name()
 
-            self.window.show_quick_panel(items, on_select)
+            self.window.show_quick_panel(
+                items, on_select, placeholder="Select bookmark to rename"
+            )
 
         self.cli.bookmark_list(on_bookmarks)
 
@@ -1251,7 +1290,9 @@ class JjBookmarkListCommand(JjWindowCommand):
 
                 self.cli.edit(selected.change_id, on_result)
 
-            self.window.show_quick_panel(items, on_select)
+            self.window.show_quick_panel(
+                items, on_select, placeholder="Select bookmark to edit"
+            )
 
         self.cli.bookmark_list(on_bookmarks)
 
@@ -1309,7 +1350,12 @@ class JjGitPushChangeCommand(JjWindowCommand):
                 selected = changes[idx]
                 self._execute_push(selected)
 
-            self.window.show_quick_panel(items, on_select, selected_index=default_index)
+            self.window.show_quick_panel(
+                items,
+                on_select,
+                selected_index=default_index,
+                placeholder="Select change to push",
+            )
 
         # Only show mutable changes - can't push immutable commits
         self.cli.get_log(on_log, revset="mutable()", limit=50)
@@ -1358,4 +1404,6 @@ class JjGitPushChangeCommand(JjWindowCommand):
                 sublime.set_clipboard(pr_url)
                 self.show_status("PR URL copied to clipboard")
 
-        self.window.show_quick_panel(items, on_select)
+        self.window.show_quick_panel(
+            items, on_select, placeholder="Create pull request?"
+        )
