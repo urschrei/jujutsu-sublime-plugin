@@ -1,0 +1,29 @@
+SublimeJJ 0.2.0
+===============
+
+Interactive Split and Squash
+
+New Commands
+------------
+
+- Split Change: Interactively split the current change by selecting which
+  hunks and lines go into the first commit
+
+- Squash Interactive: Select specific hunks and lines to squash into the
+  parent change
+
+Selection UI
+------------
+
+Both commands open a diff view with a keyboard-navigable selection interface:
+
+  - Arrow keys to navigate between hunks and lines
+  - x to toggle selection
+  - Ctrl+A to select all
+  - Enter to confirm, Escape to cancel
+
+Hunks are colour-coded: green when fully selected, yellow when partially
+selected. Diff lines are coloured green (+) and red (-) for easy scanning.
+
+For documentation and source code:
+https://github.com/urschrei/SublimeJJ
