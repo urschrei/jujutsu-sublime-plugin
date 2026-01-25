@@ -28,7 +28,7 @@ from .commands.quick_commands import (  # noqa: F401
     JjSquashCommand,
     JjUndoCommand,
 )
-from .core.jj_cli import shutdown_executor
+from .core.jj_cli import init_executor, shutdown_executor
 from .listeners.file_events import JjEventListener  # noqa: F401
 
 # Plugin version
@@ -37,6 +37,8 @@ __version__ = "0.1.0"
 
 def plugin_loaded():
     """Called when the plugin is loaded."""
+    init_executor()
+
     settings = sublime.load_settings("SublimeJJ.sublime-settings")
 
     # Log startup
