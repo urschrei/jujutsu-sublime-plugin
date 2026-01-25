@@ -66,6 +66,12 @@ PHANTOM_STYLE = """
         background-color: color(var(--background) blend(var(--foreground) 90%));
         border-radius: 2px;
     }
+    .line-indicator.addition {
+        color: var(--greenish);
+    }
+    .line-indicator.deletion {
+        color: var(--redish);
+    }
     .line-indicator a {
         padding: 2px 4px;
     }
@@ -151,8 +157,6 @@ def render_line_indicator(
     line_idx: int = 0,
 ) -> str:
     """Render the inline checkbox indicator for a diff line."""
-    _ = line_type  # Reserved for future use
-
     if is_selected:
         checkbox_text = "[x]"
         checkbox_class = "checkbox selected"
@@ -160,12 +164,20 @@ def render_line_indicator(
         checkbox_text = "[ ]"
         checkbox_class = "checkbox"
 
-    focused_class = "focused" if is_focused else ""
+    # Build class list
+    classes = ["line-indicator"]
+    if is_focused:
+        classes.append("focused")
+    if line_type == LineType.ADDITION:
+        classes.append("addition")
+    elif line_type == LineType.DELETION:
+        classes.append("deletion")
+
     href = f"toggle:line:{file_idx}:{hunk_idx}:{line_idx}"
 
     return f"""{PHANTOM_STYLE}
 <body>
-<span class="line-indicator {focused_class}"><a href="{href}" class="{checkbox_class}">{checkbox_text}</a></span>
+<span class="{" ".join(classes)}"><a href="{href}" class="{checkbox_class}">{checkbox_text}</a></span>
 </body>
 """
 

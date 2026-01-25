@@ -589,6 +589,107 @@ exit 0
 
         _get_executor().submit(execute)
 
+    def squash_interactive(self, diff_content, source, destination, callback):
+        """Squash selected changes from source into destination.
+
+        Uses the same diff editor protocol as split_with_diff.
+
+        Args:
+            diff_content: The diff representing selected changes
+            source: Source revision to squash from
+            destination: Destination revision to squash into
+            callback: Called with (success, error_message)
+        """
+        task_generation = _generation
+
+        # Create temp file for the diff
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".diff", delete=False
+        ) as diff_file:
+            diff_file.write(diff_content)
+            diff_path = diff_file.name
+
+        # Create a shell script that acts as the diff editor
+        script_content = f"""#!/bin/bash
+LEFT="$1"
+RIGHT="$2"
+# Copy left to right (baseline - deselects all changes)
+rm -rf "$RIGHT"/*
+cp -r "$LEFT"/* "$RIGHT"/ 2>/dev/null || true
+# Apply selected diff to right directory
+patch -d "$RIGHT" -p1 --no-backup-if-mismatch < {shlex.quote(diff_path)} 2>/dev/null
+exit 0
+"""
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".sh", delete=False
+        ) as script_file:
+            script_file.write(script_content)
+            script_path = script_file.name
+
+        os.chmod(script_path, 0o755)
+
+        def run_and_cleanup(result):
+            try:
+                os.unlink(diff_path)
+            except OSError:
+                pass
+            try:
+                os.unlink(script_path)
+            except OSError:
+                pass
+            callback(result.success, result.stderr if not result.success else "")
+
+        def execute():
+            try:
+                cmd = [
+                    self.jj_path,
+                    "squash",
+                    "--interactive",
+                    "--from",
+                    source,
+                    "--into",
+                    destination,
+                    "--tool",
+                    script_path,
+                ]
+                process = subprocess.Popen(
+                    cmd,
+                    cwd=self.repo_root,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    stdin=subprocess.DEVNULL,
+                    env={**os.environ, "NO_COLOR": "1"},
+                )
+                stdout, stderr = process.communicate(timeout=30)
+                result = JJResult(
+                    success=process.returncode == 0,
+                    stdout=stdout.decode("utf-8", errors="replace"),
+                    stderr=stderr.decode("utf-8", errors="replace"),
+                    returncode=process.returncode,
+                )
+                if task_generation == _generation:
+                    sublime.set_timeout(lambda: run_and_cleanup(result), 0)
+                else:
+                    try:
+                        os.unlink(diff_path)
+                        os.unlink(script_path)
+                    except OSError:
+                        pass
+            except Exception as e:
+                result = JJResult(
+                    success=False, stdout="", stderr=str(e), returncode=-1
+                )
+                if task_generation == _generation:
+                    sublime.set_timeout(lambda: run_and_cleanup(result), 0)
+                else:
+                    try:
+                        os.unlink(diff_path)
+                        os.unlink(script_path)
+                    except OSError:
+                        pass
+
+        _get_executor().submit(execute)
+
     def _parse_change_info(self, line):
         """Parse a line of template output into ChangeInfo."""
         parts = line.split(self.FIELD_SEP)

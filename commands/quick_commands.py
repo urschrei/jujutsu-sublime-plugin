@@ -456,6 +456,69 @@ class JjAbsorbCommand(JjWindowCommand):
         cli.get_current_change(on_change_info)
 
 
+class JjSquashInteractiveCommand(JjWindowCommand):
+    """Interactively squash selected parts of current change into parent.
+
+    Opens a diff selection UI to choose which hunks/lines to squash.
+    """
+
+    def run(self):
+        cli = self.get_cli()
+        if cli is None:
+            return
+
+        self.cli = cli
+        self.show_status("Loading diff...")
+
+        # Get the diff for current change
+        cli.get_diff_raw(self._on_diff_loaded)
+
+    def _on_diff_loaded(self, success: bool, result: str) -> None:
+        if not success:
+            self.show_error(f"Failed to get diff: {result}")
+            return
+
+        diff_text = result.strip()
+        if not diff_text:
+            self.show_status("Nothing to squash (no changes)")
+            return
+
+        if "diff --git" not in diff_text:
+            self.show_status("Nothing to squash (no changes)")
+            return
+
+        from ..views.split_selection import SplitViewManager
+
+        try:
+            SplitViewManager(
+                window=self.window,
+                cli=self.cli,
+                diff_text=diff_text,
+                on_complete=self._on_squash_complete,
+                on_cancel=self._on_squash_cancel,
+                title="JJ Squash: Select changes to squash into parent",
+            )
+        except ValueError as e:
+            self.show_error(str(e))
+
+    def _on_squash_complete(self, filtered_diff: str) -> None:
+        """Execute the squash with the selected changes."""
+        self.show_status("Squashing selected changes...")
+
+        def on_result(success: bool, error: str) -> None:
+            if success:
+                self.show_status("Changes squashed into parent")
+                refresh_all_views(self.window)
+            else:
+                self.show_error(f"Failed to squash: {error}")
+
+        self.cli.squash_interactive(filtered_diff, "@", "@-", on_result)
+
+    def _on_squash_cancel(self) -> None:
+        """Handle squash cancellation."""
+        self.show_status("Squash cancelled")
+
+
 class JjAbandonCommand(JjWindowCommand):
     """Abandon current change."""
 

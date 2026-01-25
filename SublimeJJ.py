@@ -26,6 +26,7 @@ from .commands.quick_commands import (  # noqa: F401
     JjRebaseCommand,
     JjRefreshCommand,
     JjSquashCommand,
+    JjSquashInteractiveCommand,
     JjUndoCommand,
 )
 from .commands.split_command import (  # noqa: F401

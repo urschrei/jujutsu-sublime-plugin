@@ -54,20 +54,23 @@ class SplitViewManager:
         diff_text: str,
         on_complete: callable,
         on_cancel: callable,
+        title: str = "JJ Split: Select changes for first commit",
     ):
-        """Initialise the split view manager.
+        """Initialise the diff selection view manager.
 
         Args:
             window: The Sublime window to create the view in
-            cli: JJCli instance for executing the split
+            cli: JJCli instance for executing commands
             diff_text: Raw diff text to parse and display
-            on_complete: Callback when split is confirmed (receives filtered diff)
-            on_cancel: Callback when split is cancelled
+            on_complete: Callback when confirmed (receives filtered diff)
+            on_cancel: Callback when cancelled
+            title: Title for the view
         """
         self.window = window
         self.cli = cli
         self.on_complete = on_complete
         self.on_cancel = on_cancel
+        self.title = title
 
         # Parse the diff
         self.state = parse_diff(diff_text)
@@ -99,7 +102,7 @@ class SplitViewManager:
 
         # Configure as scratch view
         view.set_scratch(True)
-        view.set_name("JJ Split: Select changes for first commit")
+        view.set_name(self.title)
         view.settings().set(SPLIT_VIEW_SETTING, True)
         view.settings().set("word_wrap", False)
         view.settings().set("line_numbers", False)
@@ -188,11 +191,68 @@ class SplitViewManager:
         self._render_hunk_headers()
         self._render_line_indicators()
         self._render_help_bar()
+        self._colour_diff_lines()
         self._update_folding()
 
     def _update_folding(self) -> None:
         """No longer needed - content is regenerated on expand/collapse."""
         pass
+
+    def _colour_diff_lines(self) -> None:
+        """Apply colour to diff lines and highlight focused line."""
+        from ..core.diff_selection import LineType
+
+        addition_regions = []
+        deletion_regions = []
+        focus_regions = []
+
+        for file_idx, file_diff in enumerate(self.state.files):
+            for hunk_idx, hunk in enumerate(file_diff.hunks):
+                if not hunk.expanded:
+                    continue
+
+                for diff_line in hunk.lines:
+                    line_region = self.view.line(
+                        self.view.text_point(diff_line.view_line, 0)
+                    )
+
+                    # Check if this line is focused
+                    is_focused = (
+                        file_idx == self.state.current_file_idx
+                        and hunk_idx == self.state.current_hunk_idx
+                        and diff_line.original_index == self.state.current_line_idx
+                    )
+                    if is_focused:
+                        focus_regions.append(line_region)
+
+                    if diff_line.line_type == LineType.ADDITION:
+                        addition_regions.append(line_region)
+                    elif diff_line.line_type == LineType.DELETION:
+                        deletion_regions.append(line_region)
+
+        # Use scope names that map to green/red in most colour schemes
+        self.view.add_regions(
+            "jj_additions",
+            addition_regions,
+            "markup.inserted",
+            "",
+            sublime.DRAW_NO_OUTLINE,
+        )
+        self.view.add_regions(
+            "jj_deletions",
+            deletion_regions,
+            "markup.deleted",
+            "",
+            sublime.DRAW_NO_OUTLINE,
+        )
+        # Highlight focused line with solid border
+        self.view.add_regions(
+            "jj_focus",
+            focus_regions,
+            "region.cyanish",
+            "",
+            sublime.DRAW_NO_FILL | sublime.DRAW_SOLID_UNDERLINE,
+        )
 
     def _render_hunk_headers(self) -> None:
         """Render inline indicators at the start of each hunk line."""
