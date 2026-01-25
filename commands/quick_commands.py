@@ -526,6 +526,38 @@ class JjUndoCommand(JjWindowCommand):
         cli.undo(on_result)
 
 
+class JjPullRetrunkCommand(JjWindowCommand):
+    """Fetch from git and rebase current stack onto trunk.
+
+    Runs jj git fetch, then jj rebase -d trunk() -s roots(trunk()..stack(@)).
+    Requires trunk() and stack() revset aliases to be configured.
+    """
+
+    def run(self):
+        cli = self.get_cli()
+        if cli is None:
+            return
+
+        self.cli = cli
+        self.show_status("Fetching from git...")
+        cli.git_fetch(self._on_fetch_complete)
+
+    def _on_fetch_complete(self, success, error):
+        if not success:
+            self.show_error(f"Failed to fetch: {error}")
+            return
+
+        self.show_status("Rebasing stack onto trunk...")
+        self.cli.rebase_stack_to_trunk(self._on_rebase_complete)
+
+    def _on_rebase_complete(self, success, error):
+        if success:
+            self.show_status("Fetched and rebased onto trunk")
+            refresh_all_views(self.window)
+        else:
+            self.show_error(f"Failed to rebase: {error}")
+
+
 class JjEditCommand(JjWindowCommand):
     """Edit (checkout) a specific revision."""
 

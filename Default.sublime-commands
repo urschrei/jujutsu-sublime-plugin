@@ -32,6 +32,10 @@
         "command": "jj_undo"
     },
     {
+        "caption": "JJ: Pull and Retrunk",
+        "command": "jj_pull_retrunk"
+    },
+    {
         "caption": "JJ: Edit Change...",
         "command": "jj_edit"
     },
