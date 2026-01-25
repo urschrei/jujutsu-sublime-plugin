@@ -14,7 +14,7 @@ KIND_BOOKMARK = (sublime.KIND_ID_MARKUP, "B", "Bookmark")
 KIND_ACTION = (sublime.KIND_ID_SNIPPET, ">", "Action")
 
 # Highlight colour for unique prefix
-PREFIX_STYLE = 'style="color: var(--redish)"'
+PREFIX_STYLE = 'style="color: #e0a050"'
 
 
 def format_change_details(change):
