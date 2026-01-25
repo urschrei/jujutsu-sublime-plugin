@@ -1,0 +1,6 @@
+# Exclude development files from package exports
+pyproject.toml export-ignore
+unittesting.json export-ignore
+tests/ export-ignore
+.github/ export-ignore
+.ruff_cache/ export-ignore
