@@ -502,23 +502,48 @@ class JJCli:
     def split_with_diff(self, diff_content, callback):
         """Split current change using diff content to select first part.
 
-        Uses a script as JJ_EDITOR that outputs the pre-selected diff content.
+        jj's diff editor receives two directories: left (original) and right (changed).
+        We create a script that:
+        1. Copies left to right (baseline - deselects all changes)
+        2. Applies our selected diff using patch
         """
         task_generation = _generation
 
+        # Create temp file for the diff
         with tempfile.NamedTemporaryFile(
             mode="w", suffix=".diff", delete=False
-        ) as temp_file:
-            temp_file.write(diff_content)
-            temp_path = temp_file.name
+        ) as diff_file:
+            diff_file.write(diff_content)
+            diff_path = diff_file.name
 
-        env = os.environ.copy()
-        env["NO_COLOR"] = "1"
-        env["JJ_EDITOR"] = f"cat {shlex.quote(temp_path)}"
+        # Create a shell script that acts as the diff editor
+        # jj calls: script <left_dir> <right_dir>
+        script_content = f"""#!/bin/bash
+LEFT="$1"
+RIGHT="$2"
+# Copy left to right (baseline - deselects all changes)
+rm -rf "$RIGHT"/*
+cp -r "$LEFT"/* "$RIGHT"/ 2>/dev/null || true
+# Apply selected diff to right directory
+# Use -p1 to strip the a/ b/ prefix from git diffs
+patch -d "$RIGHT" -p1 --no-backup-if-mismatch < {shlex.quote(diff_path)} 2>/dev/null
+exit 0
+"""
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".sh", delete=False
+        ) as script_file:
+            script_file.write(script_content)
+            script_path = script_file.name
+
+        os.chmod(script_path, 0o755)
 
         def run_and_cleanup(result):
             try:
-                os.unlink(temp_path)
+                os.unlink(diff_path)
+            except OSError:
+                pass
+            try:
+                os.unlink(script_path)
             except OSError:
                 pass
             callback(result.success, result.stderr if not result.success else "")
@@ -526,11 +551,12 @@ class JJCli:
         def execute():
             try:
                 process = subprocess.Popen(
-                    [self.jj_path, "split"],
+                    [self.jj_path, "split", "--tool", script_path],
                     cwd=self.repo_root,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
-                    env=env,
+                    stdin=subprocess.DEVNULL,
+                    env={**os.environ, "NO_COLOR": "1"},
                 )
                 stdout, stderr = process.communicate(timeout=30)
                 result = JJResult(
@@ -542,9 +568,10 @@ class JJCli:
                 if task_generation == _generation:
                     sublime.set_timeout(lambda: run_and_cleanup(result), 0)
                 else:
-                    # Still clean up temp file even if callback is stale
+                    # Still clean up temp files even if callback is stale
                     try:
-                        os.unlink(temp_path)
+                        os.unlink(diff_path)
+                        os.unlink(script_path)
                     except OSError:
                         pass
             except Exception as e:
@@ -555,7 +582,8 @@ class JJCli:
                     sublime.set_timeout(lambda: run_and_cleanup(result), 0)
                 else:
                     try:
-                        os.unlink(temp_path)
+                        os.unlink(diff_path)
+                        os.unlink(script_path)
                     except OSError:
                         pass
 

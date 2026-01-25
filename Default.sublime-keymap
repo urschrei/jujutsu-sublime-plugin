@@ -40,5 +40,59 @@
             "ctrl+shift+r"
         ],
         "command": "jj_rebase"
+    },
+
+    // JJ Split View Navigation
+    // Arrow-based navigation to avoid conflicts with NeoVintageous
+    // Up/Down: navigate between hunks (collapsed) or lines (expanded)
+    // Right: expand hunk and enter it
+    // Left: collapse hunk and exit to hunk level
+    {
+        "keys": ["up"],
+        "command": "jj_split_nav_prev",
+        "context": [{"key": "jj_split_view", "operand": true}]
+    },
+    {
+        "keys": ["down"],
+        "command": "jj_split_nav_next",
+        "context": [{"key": "jj_split_view", "operand": true}]
+    },
+    {
+        "keys": ["right"],
+        "command": "jj_split_expand",
+        "context": [{"key": "jj_split_view", "operand": true}]
+    },
+    {
+        "keys": ["left"],
+        "command": "jj_split_collapse",
+        "context": [{"key": "jj_split_view", "operand": true}]
+    },
+    // Toggle selection with x (avoids space conflict with NeoVintageous)
+    {
+        "keys": ["x"],
+        "command": "jj_split_toggle",
+        "context": [{"key": "jj_split_view", "operand": true}]
+    },
+    // Select all / deselect all
+    {
+        "keys": ["ctrl+a"],
+        "command": "jj_split_select_all",
+        "context": [{"key": "jj_split_view", "operand": true}]
+    },
+    {
+        "keys": ["ctrl+shift+a"],
+        "command": "jj_split_deselect_all",
+        "context": [{"key": "jj_split_view", "operand": true}]
+    },
+    // Confirm / Cancel
+    {
+        "keys": ["enter"],
+        "command": "jj_split_confirm",
+        "context": [{"key": "jj_split_view", "operand": true}]
+    },
+    {
+        "keys": ["escape"],
+        "command": "jj_split_cancel",
+        "context": [{"key": "jj_split_view", "operand": true}]
     }
 ]

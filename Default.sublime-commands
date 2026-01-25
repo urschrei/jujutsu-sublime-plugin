@@ -74,5 +74,9 @@
     {
         "caption": "JJ: Git Push (Create Bookmark)",
         "command": "jj_git_push_change"
+    },
+    {
+        "caption": "JJ: Split Change...",
+        "command": "jj_split"
     }
 ]

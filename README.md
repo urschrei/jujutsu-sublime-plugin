@@ -42,6 +42,7 @@ All commands are available via the command palette (Ctrl+Shift+P / Cmd+Shift+P) 
 | **JJ: New Change** | Create a new change (optionally with a message) |
 | **JJ: Describe** | Set or update the description of the current change |
 | **JJ: Commit** | Commit current change (describe + new) |
+| **JJ: Split Change** | Interactively split the current change (select hunks/lines for first commit) |
 | **JJ: Abandon Change** | Abandon the current change (with confirmation) |
 | **JJ: Undo Last Operation** | Undo the last jj operation |
 | **JJ: Refresh Status** | Refresh status bar |
@@ -130,6 +131,7 @@ SublimeJJ does not define default key bindings. To add your own, go to `Preferen
 - `jj_new`
 - `jj_describe`
 - `jj_commit`
+- `jj_split`
 - `jj_squash`
 - `jj_quick_squash`
 - `jj_absorb`
@@ -152,10 +154,6 @@ SublimeJJ does not define default key bindings. To add your own, go to `Preferen
 - [Command Reference](https://docs.jj-vcs.dev/latest/cli-reference/)
 - [Revset Language](https://docs.jj-vcs.dev/latest/revsets/)
 - [Fileset Language](https://docs.jj-vcs.dev/latest/filesets/)
-
-## TODO
-
-- [ ] Split change command (interactive hunk selection across multiple files)
 
 ## Licence
 
