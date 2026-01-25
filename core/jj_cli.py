@@ -1,9 +1,12 @@
 """CLI wrapper for jj with async execution and output parsing."""
 
+from __future__ import annotations
+
 import os
 import re
 import subprocess
-import threading
+import tempfile
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 
 import sublime
@@ -58,25 +61,25 @@ class BookmarkInfo:
     description: str
 
 
-class SimpleThreadPool:
-    """Simple thread pool for async execution."""
-
-    def __init__(self, max_workers=4):
-        self._max_workers = max_workers
-
-    def submit(self, fn):
-        """Submit a function to be executed in a thread."""
-        thread = threading.Thread(target=fn)
-        thread.daemon = True
-        thread.start()
-        return thread
-
-    def shutdown(self, wait=False):
-        """Shutdown the thread pool (no-op for simple implementation)."""
-        pass
+_executor: ThreadPoolExecutor | None = None
+_generation: int = 0
 
 
-_executor = SimpleThreadPool(max_workers=4)
+def _get_executor() -> ThreadPoolExecutor:
+    """Get or create the thread pool executor."""
+    global _executor
+    if _executor is None:
+        _executor = ThreadPoolExecutor(
+            max_workers=2, thread_name_prefix="sublimejj-worker"
+        )
+    return _executor
+
+
+def init_executor():
+    """Initialise the executor. Called from plugin_loaded()."""
+    global _generation
+    _generation += 1
+    _get_executor()
 
 
 class JJCli:
@@ -170,12 +173,14 @@ class JJCli:
 
     def run_async(self, args, callback, cwd=None, input_text=None):
         """Run a jj command asynchronously and call callback on main thread."""
+        task_generation = _generation
 
         def execute():
             result = self._run_sync(args, cwd, input_text)
-            sublime.set_timeout(lambda: callback(result), 0)
+            if task_generation == _generation:
+                sublime.set_timeout(lambda: callback(result), 0)
 
-        _executor.submit(execute)
+        _get_executor().submit(execute)
 
     def run(self, args, cwd=None, input_text=None):
         """Run a jj command synchronously (use sparingly)."""
@@ -550,13 +555,7 @@ class JJCli:
 
         Uses a script as JJ_EDITOR that outputs the pre-selected diff content.
         """
-
-        def on_result(result):
-            callback(result.success, result.stderr if not result.success else "")
-
-        # Pass the diff content via stdin, using a cat command as editor
-        # that reads from stdin
-        import tempfile
+        task_generation = _generation
 
         with tempfile.NamedTemporaryFile(
             mode="w", suffix=".diff", delete=False
@@ -564,25 +563,16 @@ class JJCli:
             temp_file.write(diff_content)
             temp_path = temp_file.name
 
-        # Set JJ_EDITOR to cat the temp file
-        import os
-
         env = os.environ.copy()
         env["NO_COLOR"] = "1"
         env["JJ_EDITOR"] = f"cat {temp_path}"
 
-        # Run split command
         def run_and_cleanup(result):
-            # Clean up temp file
             try:
                 os.unlink(temp_path)
             except OSError:
                 pass
             callback(result.success, result.stderr if not result.success else "")
-
-        # Use a custom execution that includes the environment
-        import subprocess
-        import threading
 
         def execute():
             try:
@@ -600,16 +590,27 @@ class JJCli:
                     stderr=stderr.decode("utf-8", errors="replace"),
                     returncode=process.returncode,
                 )
-                sublime.set_timeout(lambda: run_and_cleanup(result), 0)
+                if task_generation == _generation:
+                    sublime.set_timeout(lambda: run_and_cleanup(result), 0)
+                else:
+                    # Still clean up temp file even if callback is stale
+                    try:
+                        os.unlink(temp_path)
+                    except OSError:
+                        pass
             except Exception as e:
                 result = JJResult(
                     success=False, stdout="", stderr=str(e), returncode=-1
                 )
-                sublime.set_timeout(lambda: run_and_cleanup(result), 0)
+                if task_generation == _generation:
+                    sublime.set_timeout(lambda: run_and_cleanup(result), 0)
+                else:
+                    try:
+                        os.unlink(temp_path)
+                    except OSError:
+                        pass
 
-        thread = threading.Thread(target=execute)
-        thread.daemon = True
-        thread.start()
+        _get_executor().submit(execute)
 
     def _parse_change_info(self, line):
         """Parse a line of template output into ChangeInfo."""
@@ -734,4 +735,7 @@ class JJCli:
 
 def shutdown_executor():
     """Shutdown the thread pool executor."""
-    _executor.shutdown(wait=False)
+    global _executor
+    if _executor is not None:
+        _executor.shutdown(wait=False)
+        _executor = None
