@@ -1,0 +1,34 @@
+SublimeJJ 0.1.0
+===============
+
+Initial release of SublimeJJ - Jujutsu (jj) integration for Sublime Text.
+
+Features
+--------
+
+- Status bar showing current change ID, description, and bookmarks
+- Command palette integration for common jj operations
+- Designed for colocated repositories (.jj + .git)
+
+Commands
+--------
+
+Basic operations:
+  - New Change, Describe, Commit, Abandon, Undo
+
+Squash operations:
+  - Squash (multi-select sources)
+  - Quick Squash (instant, ideal for keybindings)
+  - Absorb (auto-move changes to ancestors)
+
+Navigation:
+  - Edit Change, Log (custom revset), Rebase (full -r/-s/-b and -d/-A/-B support)
+
+Bookmark management:
+  - Set, Move, Delete (multi-select), Rename, List
+
+Git integration:
+  - Push with automatic bookmark creation and GitHub PR URL detection
+
+For documentation and source code:
+https://github.com/urschrei/SublimeJJ
