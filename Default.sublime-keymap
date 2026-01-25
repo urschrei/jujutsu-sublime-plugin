@@ -1,42 +1,44 @@
 [
     // JJ: New Change
     {
-        "keys": ["super+shift+n"],
-        "command": "jj_new",
-        "context": [
-            { "key": "setting.jj_enabled", "operator": "equal", "operand": true }
-        ]
+        "keys": [
+            "ctrl+shift+n"
+        ],
+        "command": "jj_new"
     },
     // JJ: Commit
     {
-        "keys": ["super+shift+c"],
-        "command": "jj_commit",
-        "context": [
-            { "key": "setting.jj_enabled", "operator": "equal", "operand": true }
-        ]
-    },
-    // JJ: Show Commit Graph
-    {
-        "keys": ["super+shift+g"],
-        "command": "jj_show_graph",
-        "context": [
-            { "key": "setting.jj_enabled", "operator": "equal", "operand": true }
-        ]
-    },
-    // JJ: Toggle Inline Diff
-    {
-        "keys": ["super+shift+d"],
-        "command": "jj_toggle_inline_diff",
-        "context": [
-            { "key": "setting.jj_enabled", "operator": "equal", "operand": true }
-        ]
+        "keys": [
+            "ctrl+shift+c"
+        ],
+        "command": "jj_commit"
     },
     // JJ: Undo
     {
-        "keys": ["super+shift+z"],
-        "command": "jj_undo",
-        "context": [
-            { "key": "setting.jj_enabled", "operator": "equal", "operand": true }
-        ]
+        "keys": [
+            "ctrl+shift+z"
+        ],
+        "command": "jj_undo"
+    },
+    // JJ: Quick Squash
+    {
+        "keys": [
+            "ctrl+shift+s"
+        ],
+        "command": "jj_quick_squash"
+    },
+    // JJ: Squash
+    {
+        "keys": [
+            "ctrl+shift+l"
+        ],
+        "command": "jj_squash"
+    },
+    // JJ: Rebase
+    {
+        "keys": [
+            "ctrl+shift+r"
+        ],
+        "command": "jj_rebase"
     }
 ]
