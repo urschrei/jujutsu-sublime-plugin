@@ -24,6 +24,10 @@
         "command": "jj_absorb"
     },
     {
+        "caption": "JJ: Squash Interactive...",
+        "command": "jj_squash_interactive"
+    },
+    {
         "caption": "JJ: Abandon Change",
         "command": "jj_abandon"
     },
