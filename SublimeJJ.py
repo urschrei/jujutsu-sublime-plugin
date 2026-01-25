@@ -28,8 +28,24 @@ from .commands.quick_commands import (  # noqa: F401
     JjSquashCommand,
     JjUndoCommand,
 )
+from .commands.split_command import (  # noqa: F401
+    JjSplitCancelCommand,
+    JjSplitCollapseCommand,
+    JjSplitCommand,
+    JjSplitConfirmCommand,
+    JjSplitDeselectAllCommand,
+    JjSplitExpandCommand,
+    JjSplitNavNextCommand,
+    JjSplitNavPrevCommand,
+    JjSplitSelectAllCommand,
+    JjSplitToggleCommand,
+)
 from .core.jj_cli import init_executor, shutdown_executor
 from .listeners.file_events import JjEventListener  # noqa: F401
+from .listeners.split_events import (  # noqa: F401
+    SplitViewEventListener,
+    SplitViewInputHandler,
+)
 
 # Plugin version
 __version__ = "0.1.0"
