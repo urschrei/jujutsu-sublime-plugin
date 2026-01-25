@@ -9,6 +9,7 @@ import sublime
 
 from .commands.quick_commands import (  # noqa: F401
     JjAbandonCommand,
+    JjAbsorbCommand,
     JjBookmarkDeleteCommand,
     JjBookmarkListCommand,
     JjBookmarkMoveCommand,
@@ -20,6 +21,7 @@ from .commands.quick_commands import (  # noqa: F401
     JjGitPushChangeCommand,
     JjLogCommand,
     JjNewCommand,
+    JjPullRetrunkCommand,
     JjQuickSquashCommand,
     JjRebaseCommand,
     JjRefreshCommand,
