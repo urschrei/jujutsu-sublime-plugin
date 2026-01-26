@@ -1,0 +1,17 @@
+SublimeJJ 0.3.0
+===============
+
+Interactive Squash Improvements
+
+Changes
+-------
+
+- Squash Interactive now lets you choose the destination commit (previously
+  fixed to parent). Select from any mutable commit before picking hunks/lines.
+
+- Diff lines now use more muted colours for better readability.
+
+- Internal refactoring for cleaner, more maintainable code.
+
+For documentation and source code:
+https://github.com/urschrei/SublimeJJ
