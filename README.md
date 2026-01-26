@@ -52,7 +52,7 @@ All commands are available via the command palette (Ctrl+Shift+P / Cmd+Shift+P) 
 | Command | Description |
 |---------|-------------|
 | **JJ: Squash...** | Interactive squash with multi-select sources and destination picker |
-| **JJ: Squash Interactive...** | Select specific hunks/lines to squash into parent (same UI as split) |
+| **JJ: Squash Interactive...** | Select destination, then choose specific hunks/lines to squash (same UI as split) |
 | **JJ: Quick Squash** | Instantly squash current change into parent (no interaction, ideal for keybinding) |
 | **JJ: Absorb** | Automatically move changes into ancestor commits where those lines were last modified |
 

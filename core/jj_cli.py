@@ -389,13 +389,21 @@ class JJCli:
 
         self.run_async(args, _make_success_callback(callback))
 
-    def get_diff_raw(self, callback, revision="@"):
-        """Get raw diff output for a revision."""
+    def get_diff_raw(self, callback, revision="@", context=3):
+        """Get raw diff output for a revision.
+
+        Args:
+            callback: Called with (success, diff_text_or_error)
+            revision: Revision to diff (default: @)
+            context: Number of context lines around changes (default: 3)
+        """
 
         def on_result(result):
             callback(result.success, result.stdout if result.success else result.stderr)
 
-        self.run_async(["diff", "-r", revision, "--git"], on_result)
+        self.run_async(
+            ["diff", "-r", revision, "--git", "--context", str(context)], on_result
+        )
 
     # Bookmark template for machine-readable output
     BOOKMARK_TEMPLATE = (

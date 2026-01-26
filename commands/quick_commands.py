@@ -457,9 +457,10 @@ class JjAbsorbCommand(JjWindowCommand):
 
 
 class JjSquashInteractiveCommand(JjWindowCommand):
-    """Interactively squash selected parts of current change into parent.
+    """Interactively squash selected parts of current change into a destination.
 
-    Opens a diff selection UI to choose which hunks/lines to squash.
+    Opens a destination picker, then a diff selection UI to choose which
+    hunks/lines to squash.
     """
 
     def run(self):
@@ -468,10 +469,54 @@ class JjSquashInteractiveCommand(JjWindowCommand):
             return
 
         self.cli = cli
-        self.show_status("Loading diff...")
+        self._select_destination()
 
-        # Get the diff for current change
-        cli.get_diff_raw(self._on_diff_loaded)
+    def _select_destination(self):
+        """Step 1: Select destination commit to squash into."""
+
+        def on_log(changes):
+            if not changes:
+                self.show_error("Could not get change log")
+                return
+
+            # Filter out the working copy - can't squash into yourself
+            valid_changes = [c for c in changes if not c.is_working_copy]
+            if not valid_changes:
+                self.show_error("No valid destinations for squash")
+                return
+
+            items = [
+                build_change_quick_panel_item(change, include_immutable=False)
+                for change in valid_changes
+            ]
+
+            # Find @- (parent) to set as default selection
+            default_index = 0
+            for i, change in enumerate(valid_changes):
+                # The first non-working-copy commit is typically @-
+                # We could also check if it's the parent, but this is simpler
+                break
+
+            def on_select(idx):
+                if idx < 0:
+                    return
+                self.destination = valid_changes[idx]
+                self._load_diff()
+
+            self.window.show_quick_panel(
+                items,
+                on_select,
+                selected_index=default_index,
+                placeholder="Select destination to squash into",
+            )
+
+        # Show mutable commits as potential destinations
+        self.cli.get_log(on_log, revset="mutable()", limit=DEFAULT_LOG_LIMIT)
+
+    def _load_diff(self):
+        """Step 2: Load the diff for current change."""
+        self.show_status("Loading diff...")
+        self.cli.get_diff_raw(self._on_diff_loaded)
 
     def _on_diff_loaded(self, success: bool, result: str) -> None:
         if not success:
@@ -489,6 +534,7 @@ class JjSquashInteractiveCommand(JjWindowCommand):
 
         from ..views.split_selection import SplitViewManager
 
+        dest_id = self.destination.change_id
         try:
             SplitViewManager(
                 window=self.window,
@@ -496,23 +542,24 @@ class JjSquashInteractiveCommand(JjWindowCommand):
                 diff_text=diff_text,
                 on_complete=self._on_squash_complete,
                 on_cancel=self._on_squash_cancel,
-                title="JJ Squash: Select changes to squash into parent",
+                title=f"JJ Squash: Select changes to squash into {dest_id}",
             )
         except ValueError as e:
             self.show_error(str(e))
 
     def _on_squash_complete(self, filtered_diff: str) -> None:
         """Execute the squash with the selected changes."""
-        self.show_status("Squashing selected changes...")
+        dest_id = self.destination.change_id
+        self.show_status(f"Squashing selected changes into {dest_id}...")
 
         def on_result(success: bool, error: str) -> None:
             if success:
-                self.show_status("Changes squashed into parent")
+                self.show_status(f"Changes squashed into {dest_id}")
                 refresh_all_views(self.window)
             else:
                 self.show_error(f"Failed to squash: {error}")
 
-        self.cli.squash_interactive(filtered_diff, "@", "@-", on_result)
+        self.cli.squash_interactive(filtered_diff, "@", dest_id, on_result)
 
     def _on_squash_cancel(self) -> None:
         """Handle squash cancellation."""
