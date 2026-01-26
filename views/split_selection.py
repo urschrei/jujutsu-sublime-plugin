@@ -215,18 +215,18 @@ class SplitViewManager:
                     elif diff_line.line_type == LineType.DELETION:
                         deletion_regions.append(line_region)
 
-        # Use scope names that map to green/red in most colour schemes
+        # Use region.* scopes for more muted colours than markup.inserted/deleted
         self.view.add_regions(
             "jj_additions",
             addition_regions,
-            "markup.inserted",
+            "region.greenish",
             "",
             sublime.DRAW_NO_OUTLINE,
         )
         self.view.add_regions(
             "jj_deletions",
             deletion_regions,
-            "markup.deleted",
+            "region.redish",
             "",
             sublime.DRAW_NO_OUTLINE,
         )
