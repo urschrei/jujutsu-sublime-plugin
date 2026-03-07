@@ -117,17 +117,25 @@ Configure SublimeJJ via `Preferences > Package Settings > SublimeJJ > Settings` 
 
 ## Key Bindings
 
-SublimeJJ does not define default key bindings. To add your own, go to `Preferences > Key Bindings` and add entries like:
+SublimeJJ does not define default key bindings to avoid conflicts with other packages. To add your own, go to `Preferences > Key Bindings` and add entries from the suggestions below.
+
+### Suggested Shortcuts
+
+These are convenient bindings for the most common operations. Copy whichever you find useful into your user key bindings:
 
 ```json
 [
-    { "keys": ["ctrl+shift+s"], "command": "jj_quick_squash" },
     { "keys": ["ctrl+shift+n"], "command": "jj_new" },
-    { "keys": ["ctrl+shift+d"], "command": "jj_describe" }
+    { "keys": ["ctrl+shift+c"], "command": "jj_commit" },
+    { "keys": ["ctrl+shift+d"], "command": "jj_describe" },
+    { "keys": ["ctrl+shift+z"], "command": "jj_undo" },
+    { "keys": ["ctrl+shift+s"], "command": "jj_quick_squash" },
+    { "keys": ["ctrl+shift+l"], "command": "jj_squash" },
+    { "keys": ["ctrl+shift+r"], "command": "jj_rebase" }
 ]
 ```
 
-### Available Command Names
+### All Available Command Names
 
 - `jj_new`
 - `jj_describe`

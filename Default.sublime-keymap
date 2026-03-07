@@ -1,47 +1,4 @@
 [
-    // JJ: New Change
-    {
-        "keys": [
-            "ctrl+shift+n"
-        ],
-        "command": "jj_new"
-    },
-    // JJ: Commit
-    {
-        "keys": [
-            "ctrl+shift+c"
-        ],
-        "command": "jj_commit"
-    },
-    // JJ: Undo
-    {
-        "keys": [
-            "ctrl+shift+z"
-        ],
-        "command": "jj_undo"
-    },
-    // JJ: Quick Squash
-    {
-        "keys": [
-            "ctrl+shift+s"
-        ],
-        "command": "jj_quick_squash"
-    },
-    // JJ: Squash
-    {
-        "keys": [
-            "ctrl+shift+l"
-        ],
-        "command": "jj_squash"
-    },
-    // JJ: Rebase
-    {
-        "keys": [
-            "ctrl+shift+r"
-        ],
-        "command": "jj_rebase"
-    },
-
     // JJ Split View Navigation
     // Arrow-based navigation to avoid conflicts with NeoVintageous
     // Up/Down: navigate between hunks (collapsed) or lines (expanded)

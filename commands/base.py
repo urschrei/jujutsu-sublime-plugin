@@ -9,9 +9,16 @@ from ..core.repo import get_repo_manager
 class JjCommandMixin:
     """Mixin providing shared functionality for jj commands."""
 
+    def _find_file_path(self):
+        """Return a file path or folder to use for repo detection."""
+        raise NotImplementedError
+
     def is_enabled(self):
         """Command is enabled only in jj repositories."""
-        return self.get_cli() is not None
+        path = self._find_file_path()
+        if path is None:
+            return False
+        return get_repo_manager().find_repo_root(path) is not None
 
     def show_error(self, message):
         """Show an error message."""
@@ -24,6 +31,16 @@ class JjCommandMixin:
 
 class JjWindowCommand(JjCommandMixin, sublime_plugin.WindowCommand):
     """Base class for jj window commands."""
+
+    def _find_file_path(self):
+        """Return a file path or folder for repo detection."""
+        view = self.window.active_view()
+        if view is not None:
+            file_path = view.file_name()
+            if file_path is not None:
+                return file_path
+        folders = self.window.folders()
+        return folders[0] if folders else None
 
     def get_cli(self):
         """Get the JJCli instance for the current window."""
@@ -61,6 +78,10 @@ class JjWindowCommand(JjCommandMixin, sublime_plugin.WindowCommand):
 
 class JjTextCommand(JjCommandMixin, sublime_plugin.TextCommand):
     """Base class for jj text commands."""
+
+    def _find_file_path(self):
+        """Return a file path for repo detection."""
+        return self.view.file_name()
 
     def get_cli(self):
         """Get the JJCli instance for the current view."""
