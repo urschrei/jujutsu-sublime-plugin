@@ -15,6 +15,15 @@ import sublime
 from .diff_selection import HUNK_HEADER_RE
 
 
+def _get_startupinfo():
+    """Return a STARTUPINFO that hides the console window on Windows."""
+    if hasattr(subprocess, "STARTUPINFO"):
+        si = subprocess.STARTUPINFO()
+        si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+        return si
+    return None
+
+
 @dataclass
 class JJResult:
     """Result of a jj command execution."""
@@ -154,6 +163,7 @@ class JJCli:
                 stderr=subprocess.PIPE,
                 stdin=subprocess.PIPE if input_text else None,
                 env=env,
+                startupinfo=_get_startupinfo(),
             )
             stdout, stderr = process.communicate(
                 input=input_text.encode() if input_text else None, timeout=30
@@ -574,6 +584,7 @@ exit 0
                     stderr=subprocess.PIPE,
                     stdin=subprocess.DEVNULL,
                     env={**os.environ, "NO_COLOR": "1"},
+                    startupinfo=_get_startupinfo(),
                 )
                 stdout, stderr = process.communicate(timeout=30)
                 result = JJResult(
