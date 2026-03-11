@@ -10,9 +10,8 @@ from .jj_cli import JJCli
 class RepoInfo:
     """Information about a jj repository."""
 
-    def __init__(self, root, is_colocated):
+    def __init__(self, root):
         self.root = root
-        self.is_colocated = is_colocated  # Has both .jj and .git
 
 
 class RepoManager:
@@ -52,9 +51,7 @@ class RepoManager:
         while current and current != os.path.dirname(current):
             jj_dir = os.path.join(current, ".jj")
             if os.path.isdir(jj_dir):
-                git_dir = os.path.join(current, ".git")
-                is_colocated = os.path.isdir(git_dir) or os.path.isfile(git_dir)
-                info = RepoInfo(root=current, is_colocated=is_colocated)
+                info = RepoInfo(root=current)
                 repo_cache.set(cache_key, info, ttl=60.0)  # Cache for 1 minute
                 return info
             current = os.path.dirname(current)

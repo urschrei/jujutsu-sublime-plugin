@@ -69,35 +69,6 @@ class TestRepoManagerFindRoot:
 
         assert result is None
 
-    def test_detects_colocated_git(self, tmp_path, clean_repo_manager):
-        """Repo with both .jj and .git is marked as colocated."""
-        # Create both .jj and .git directories
-        jj_dir = tmp_path / ".jj"
-        jj_dir.mkdir()
-        git_dir = tmp_path / ".git"
-        git_dir.mkdir()
-
-        test_file = tmp_path / "test.py"
-        test_file.write_text("content")
-
-        result = clean_repo_manager.find_repo_root(str(test_file))
-
-        assert result is not None
-        assert result.is_colocated is True
-
-    def test_jj_only_not_colocated(self, tmp_path, clean_repo_manager):
-        """Repo with only .jj (no .git) is not marked as colocated."""
-        jj_dir = tmp_path / ".jj"
-        jj_dir.mkdir()
-
-        test_file = tmp_path / "test.py"
-        test_file.write_text("content")
-
-        result = clean_repo_manager.find_repo_root(str(test_file))
-
-        assert result is not None
-        assert result.is_colocated is False
-
     def test_caches_results(self, tmp_path, clean_repo_manager):
         """Results are cached for performance."""
         jj_dir = tmp_path / ".jj"

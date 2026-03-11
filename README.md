@@ -106,10 +106,6 @@ Configure SublimeJJ via `Preferences > Package Settings > SublimeJJ > Settings` 
     // Debounce delay in seconds for updates after save.
     "debounce_delay": 0.5,
 
-    // In colocated repositories (both .jj and .git), prefer jj.
-    // Set to false to let Sublime's built-in git take precedence.
-    "prefer_jj_in_colocated": true,
-
     // Enable debug logging.
     "debug": false
 }
