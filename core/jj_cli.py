@@ -95,7 +95,7 @@ def _get_executor() -> ThreadPoolExecutor:
     global _executor
     if _executor is None:
         _executor = ThreadPoolExecutor(
-            max_workers=2, thread_name_prefix="sublimejj-worker"
+            max_workers=2, thread_name_prefix="sublime-jujutsu-worker"
         )
     return _executor
 
