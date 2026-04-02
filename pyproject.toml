@@ -1,6 +1,6 @@
 [project]
-name = "sublimejj"
-version = "0.1.0"
+name = "jujutsu"
+version = "0.4.3"
 description = "Jujutsu (jj) integration for Sublime Text"
 readme = "README.md"
 requires-python = ">=3.8"
