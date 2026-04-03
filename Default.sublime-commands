@@ -82,5 +82,21 @@
     {
         "caption": "JJ: Split Change...",
         "command": "jj_split"
+    },
+    {
+        "caption": "Preferences: Jujutsu Settings",
+        "command": "edit_settings",
+        "args": {
+            "base_file": "${packages}/Jujutsu/Jujutsu.sublime-settings",
+            "default": "// Jujutsu settings\n// See default settings on the left for available options\n{\n\t$0\n}\n"
+        }
+    },
+    {
+        "caption": "Preferences: Jujutsu Key Bindings",
+        "command": "edit_settings",
+        "args": {
+            "base_file": "${packages}/Jujutsu/Default.sublime-keymap",
+            "default": "// Jujutsu key bindings\n// See default bindings on the left for available commands\n[\n\t$0\n]\n"
+        }
     }
 ]
