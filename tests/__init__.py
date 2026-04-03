@@ -1,1 +1,1 @@
-# Tests for SublimeJJ
+# Tests for Jujutsu

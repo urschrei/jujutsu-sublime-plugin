@@ -10,7 +10,7 @@ from ..core.repo import get_repo_manager
 from ..views.status_bar import update_status_bar
 
 # Settings file name
-SETTINGS_FILE = "SublimeJJ.sublime-settings"
+SETTINGS_FILE = "Jujutsu.sublime-settings"
 
 
 class Debouncer:

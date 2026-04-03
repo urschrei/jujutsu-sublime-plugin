@@ -1,1 +1,1 @@
-# Commands module for SublimeJJ plugin
+# Commands module for Jujutsu plugin

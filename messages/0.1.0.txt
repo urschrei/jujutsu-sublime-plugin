@@ -1,7 +1,7 @@
-SublimeJJ 0.1.0
-===============
+Jujutsu 0.1.0
+=============
 
-Initial release of SublimeJJ - Jujutsu (jj) integration for Sublime Text.
+Initial release of the Jujutsu plugin - Jujutsu (jj) integration for Sublime Text.
 
 Features
 --------

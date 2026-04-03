@@ -1,4 +1,4 @@
-"""Base command classes for SublimeJJ."""
+"""Base command classes for Jujutsu."""
 
 import sublime
 import sublime_plugin
@@ -22,7 +22,7 @@ class JjCommandMixin:
 
     def show_error(self, message):
         """Show an error message."""
-        sublime.error_message(f"SublimeJJ: {message}")
+        sublime.error_message(f"Jujutsu: {message}")
 
     def show_status(self, message):
         """Show a status message."""

@@ -1,8 +1,8 @@
-# SublimeJJ
+# Jujutsu
 
 [Jujutsu](https://www.jj-vcs.dev/latest/) (`jj`) integration for Sublime Text.
 
-SublimeJJ provides status bar information and jj commands accessible via the command palette. It is designed for **colocated repositories** (where both `.jj` and `.git` exist), letting Sublime's built-in git integration handle diff gutters and other git-specific features while SublimeJJ adds jj workflow commands.
+Jujutsu provides status bar information and jj commands accessible via the command palette. It is designed for **colocated repositories** (where both `.jj` and `.git` exist), letting Sublime's built-in git integration handle diff gutters and other git-specific features while Jujutsu adds jj workflow commands.
 
 ## Features
 
@@ -20,12 +20,12 @@ SublimeJJ provides status bar information and jj commands accessible via the com
 
 1. Open the command palette (Ctrl+Shift+P / Cmd+Shift+P)
 2. Run "Package Control: Install Package"
-3. Search for "SublimeJJ" and install
+3. Search for "Jujutsu" and install
 
 ### Manual Installation
 
 1. Clone or download this repository
-2. Copy the `SublimeJJ` folder to your Sublime Text Packages directory:
+2. Copy the `Jujutsu` folder to your Sublime Text Packages directory:
    - macOS: `~/Library/Application Support/Sublime Text/Packages/`
    - Linux: `~/.config/sublime-text/Packages/`
    - Windows: `%APPDATA%\Sublime Text\Packages\`
@@ -93,7 +93,7 @@ The "Pull and Retrunk" command runs `jj git fetch` followed by `jj rebase -d tru
 
 ## Settings
 
-Configure SublimeJJ via `Preferences > Package Settings > SublimeJJ > Settings` or by editing `SublimeJJ.sublime-settings`:
+Configure Jujutsu via `Preferences > Package Settings > Jujutsu > Settings` or by editing `Jujutsu.sublime-settings`:
 
 ```json
 {
@@ -113,7 +113,7 @@ Configure SublimeJJ via `Preferences > Package Settings > SublimeJJ > Settings` 
 
 ## Key Bindings
 
-SublimeJJ does not define default key bindings to avoid conflicts with other packages. To add your own, go to `Preferences > Key Bindings` and add entries from the suggestions below.
+Jujutsu does not define default key bindings to avoid conflicts with other packages. To add your own, go to `Preferences > Key Bindings` and add entries from the suggestions below.
 
 ### Suggested Shortcuts
 

@@ -1,1 +1,1 @@
-# Listeners module for SublimeJJ plugin
+# Listeners module for Jujutsu plugin

@@ -1,4 +1,4 @@
-"""SublimeJJ - Jujutsu (jj) integration for Sublime Text.
+"""Jujutsu - Jujutsu (jj) integration for Sublime Text.
 
 This is the main entry point for the plugin, providing:
 - Status bar with current change ID and description
@@ -56,11 +56,11 @@ def plugin_loaded():
     """Called when the plugin is loaded."""
     init_executor()
 
-    settings = sublime.load_settings("SublimeJJ.sublime-settings")
+    settings = sublime.load_settings("Jujutsu.sublime-settings")
 
     # Log startup
     if settings.get("debug", False):
-        print(f"SublimeJJ {__version__} loaded")
+        print(f"Jujutsu {__version__} loaded")
 
 
 def plugin_unloaded():

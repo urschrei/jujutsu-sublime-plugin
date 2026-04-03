@@ -1,4 +1,4 @@
-# Contributing to SublimeJJ
+# Contributing to Jujutsu
 
 ## Before You Start
 

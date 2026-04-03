@@ -1,1 +1,1 @@
-# Core module for SublimeJJ plugin
+# Core module for Jujutsu plugin

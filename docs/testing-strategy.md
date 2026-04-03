@@ -1,10 +1,10 @@
-# Testing Strategy for SublimeJJ
+# Testing Strategy for Jujutsu
 
-This document describes the testing approach for SublimeJJ and provides guidance for adding tests when developing new features.
+This document describes the testing approach for Jujutsu and provides guidance for adding tests when developing new features.
 
 ## Overview
 
-SublimeJJ is a Sublime Text plugin, which presents unique testing challenges:
+Jujutsu is a Sublime Text plugin, which presents unique testing challenges:
 
 1. **Runtime dependency on Sublime Text**: The `sublime` and `sublime_plugin` modules only exist within Sublime Text's Python environment
 2. **Relative imports**: The plugin uses relative imports that assume a specific package structure

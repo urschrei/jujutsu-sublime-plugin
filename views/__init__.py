@@ -1,1 +1,1 @@
-# Views module for SublimeJJ plugin
+# Views module for Jujutsu plugin

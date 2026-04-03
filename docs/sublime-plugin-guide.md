@@ -1,6 +1,6 @@
 # Sublime Text 4 Plugin Development Guide
 
-This document captures lessons learned while developing SublimeJJ. It serves as a reference for future plugin development.
+This document captures lessons learned while developing the Jujutsu plugin. It serves as a reference for future plugin development.
 
 ## Python Version Compatibility
 
