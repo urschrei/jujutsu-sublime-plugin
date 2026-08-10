@@ -790,6 +790,17 @@ exit 0
         """Split current change using diff content to select first part."""
         self._run_with_diff_editor(diff_content, ["split"], callback)
 
+    def absorb_interactive(self, diff_content, callback, from_rev=None):
+        """Absorb selected changes into ancestor commits.
+
+        Only the hunks present in diff_content are considered for
+        absorption. Requires jj 0.44 or later.
+        """
+        args = ["absorb", "--interactive"]
+        if from_rev:
+            args.extend(["--from", from_rev])
+        self._run_with_diff_editor(diff_content, args, callback)
+
     def squash_interactive(self, diff_content, source, destination, callback):
         """Squash selected changes from source into destination.
 

@@ -15,6 +15,7 @@ from .commands.oplog_commands import JjOpLogCommand  # noqa: F401
 from .commands.quick_commands import (  # noqa: F401
     JjAbandonCommand,
     JjAbsorbCommand,
+    JjAbsorbInteractiveCommand,
     JjBookmarkDeleteCommand,
     JjBookmarkListCommand,
     JjBookmarkMoveCommand,

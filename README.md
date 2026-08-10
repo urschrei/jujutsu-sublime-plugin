@@ -56,6 +56,7 @@ All commands are available via the command palette (Ctrl+Shift+P / Cmd+Shift+P) 
 | **JJ: Squash Interactive...** | Select destination, then choose specific hunks/lines to squash (same UI as split) |
 | **JJ: Quick Squash** | Instantly squash current change into parent (no interaction, ideal for keybinding) |
 | **JJ: Absorb** | Automatically move changes into ancestor commits where those lines were last modified |
+| **JJ: Absorb Interactive...** | Choose specific hunks/lines to absorb (same UI as split); requires jj 0.44 or later |
 
 ### Navigation and History
 
@@ -151,8 +152,12 @@ These are convenient bindings for the most common operations. Copy whichever you
 - `jj_squash_interactive`
 - `jj_quick_squash`
 - `jj_absorb`
+- `jj_absorb_interactive`
 - `jj_abandon`
 - `jj_undo`
+- `jj_op_log`
+- `jj_conflicts`
+- `jj_conflicted_files`
 - `jj_pull_retrunk`
 - `jj_edit`
 - `jj_log`

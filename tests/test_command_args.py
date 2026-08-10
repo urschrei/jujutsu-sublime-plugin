@@ -244,3 +244,32 @@ class TestOpLog:
         """op restore is passed the operation id."""
         self.cli.op_restore("abc123def456", callback=lambda *args: None)
         assert self.captured_args == ["op", "restore", "abc123def456"]
+
+
+class TestAbsorbInteractive:
+    """Tests for absorb_interactive argument building."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.cli = JJCli("/tmp/fake-repo")
+        self.captured = None
+
+        def capture_editor(diff_content, jj_args, callback):
+            self.captured = (diff_content, jj_args)
+
+        self.cli._run_with_diff_editor = capture_editor
+
+    def test_default_source(self):
+        """Without a source revision, only absorb --interactive is passed."""
+        self.cli.absorb_interactive("some diff", callback=lambda *args: None)
+        assert self.captured == ("some diff", ["absorb", "--interactive"])
+
+    def test_explicit_source(self):
+        """An explicit source revision is passed via --from."""
+        self.cli.absorb_interactive(
+            "some diff", callback=lambda *args: None, from_rev="abc123"
+        )
+        assert self.captured == (
+            "some diff",
+            ["absorb", "--interactive", "--from", "abc123"],
+        )
