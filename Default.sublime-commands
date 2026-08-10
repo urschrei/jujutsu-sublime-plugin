@@ -68,6 +68,18 @@
         "command": "jj_log_view"
     },
     {
+        "caption": "JJ: File History...",
+        "command": "jj_file_history"
+    },
+    {
+        "caption": "JJ: Annotate File",
+        "command": "jj_annotate_file"
+    },
+    {
+        "caption": "JJ: Evolog (Change Evolution)...",
+        "command": "jj_evolog"
+    },
+    {
         "caption": "JJ: Bookmark Set",
         "command": "jj_bookmark_set"
     },

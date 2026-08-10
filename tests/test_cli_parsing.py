@@ -323,3 +323,52 @@ class TestOperationLogParsing(TestCase):
         """Malformed lines return None."""
         self.assertIsNone(self.cli._parse_operation_info("not enough fields"))
         self.assertIsNone(self.cli._parse_operation_info(""))
+
+
+class TestEvologParsing(TestCase):
+    """Test parsing of jj evolog output."""
+
+    def setUp(self):
+        """Create a CLI instance for testing."""
+        self.cli = JJCli("/tmp/fake-repo")
+
+    def test_parse_evolog_entries(self):
+        """Evolog lines are parsed into entries via the callback."""
+        collected = []
+
+        def capture_run_async(args, callback, **kwargs):
+            from core.jj_cli import JJResult
+
+            callback(
+                JJResult(
+                    success=True,
+                    stdout=(
+                        "00bad09a|||Add settings menu|||2026-04-03 19:40\n"
+                        "61978e60|||(no description)|||2026-04-03 19:40\n"
+                    ),
+                    stderr="",
+                    returncode=0,
+                )
+            )
+
+        self.cli.run_async = capture_run_async
+        self.cli.get_evolog(collected.extend)
+
+        self.assertEqual(len(collected), 2)
+        self.assertEqual(collected[0].commit_id, "00bad09a")
+        self.assertEqual(collected[0].description, "Add settings menu")
+        self.assertEqual(collected[1].description, "(no description)")
+
+    def test_evolog_failure_yields_empty_list(self):
+        """A failed evolog command yields an empty list."""
+        collected = []
+
+        def capture_run_async(args, callback, **kwargs):
+            from core.jj_cli import JJResult
+
+            callback(JJResult(success=False, stdout="", stderr="err", returncode=1))
+
+        self.cli.run_async = capture_run_async
+        self.cli.get_evolog(collected.extend)
+
+        self.assertEqual(collected, [])

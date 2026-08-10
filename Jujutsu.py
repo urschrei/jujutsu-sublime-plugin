@@ -11,6 +11,11 @@ from .commands.conflict_commands import (  # noqa: F401
     JjConflictedFilesCommand,
     JjConflictsCommand,
 )
+from .commands.file_commands import (  # noqa: F401
+    JjAnnotateFileCommand,
+    JjEvologCommand,
+    JjFileHistoryCommand,
+)
 from .commands.log_view_commands import (  # noqa: F401
     JjLogViewAbandonCommand,
     JjLogViewBookmarkCommand,

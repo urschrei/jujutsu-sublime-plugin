@@ -78,6 +78,15 @@ class OperationInfo:
 
 
 @dataclass
+class EvologEntry:
+    """One entry in a change's evolution log (a past commit version)."""
+
+    commit_id: str
+    description: str
+    timestamp: str
+
+
+@dataclass
 class ConflictedFile:
     """A conflicted file as reported by jj resolve --list."""
 
@@ -249,6 +258,65 @@ class JJCli:
         self.run_async(
             ["log", "-r", "@", "-T", self.STATUS_TEMPLATE, "--no-graph"], on_result
         )
+
+    # Evolog entries expose the commit via the `commit` keyword rather
+    # than top-level commit keywords
+    EVOLOG_TEMPLATE = (
+        'commit.commit_id().short(8) ++ "|||" ++ '
+        "if(commit.description(), commit.description().first_line(), "
+        '"(no description)") ++ "|||" ++ '
+        'commit.committer().timestamp().format("%Y-%m-%d %H:%M") ++ "\\n"'
+    )
+
+    def get_evolog(self, callback, revision="@", limit=50):
+        """Get the evolution log of a change (its past commit versions).
+
+        Callback receives a list of EvologEntry, newest first.
+        """
+
+        def on_result(result):
+            if not result.success:
+                callback([])
+                return
+
+            entries = []
+            for line in result.stdout.strip().split("\n"):
+                if not line:
+                    continue
+                parts = line.split(self.FIELD_SEP)
+                if len(parts) < 3:
+                    continue
+                entries.append(
+                    EvologEntry(
+                        commit_id=parts[0],
+                        description=parts[1],
+                        timestamp=parts[2],
+                    )
+                )
+            callback(entries)
+
+        args = [
+            "evolog",
+            "-r",
+            revision,
+            "--no-graph",
+            "-n",
+            str(limit),
+            "-T",
+            self.EVOLOG_TEMPLATE,
+        ]
+        self.run_async(args, on_result)
+
+    def annotate_file(self, path, callback):
+        """Annotate a file with the change that last modified each line.
+
+        Callback receives (success, text_or_error).
+        """
+
+        def on_result(result):
+            callback(result.success, result.stdout if result.success else result.stderr)
+
+        self.run_async(["file", "annotate", path], on_result)
 
     OP_LOG_TEMPLATE = (
         'id.short(12) ++ "|||" ++ '
@@ -446,8 +514,8 @@ class JJCli:
 
         self.run_async(graph_args, on_graph)
 
-    def get_log(self, callback, revset="::", limit=50):
-        """Get commit log."""
+    def get_log(self, callback, revset="::", limit=50, paths=None):
+        """Get commit log, optionally restricted to the given paths."""
 
         def on_result(result):
             if not result.success:
@@ -472,6 +540,8 @@ class JJCli:
             "-n",
             str(limit),
         ]
+        if paths:
+            args.extend(["--"] + list(paths))
         self.run_async(args, on_result)
 
     def get_diff(self, callback, file_path=None):

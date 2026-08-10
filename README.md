@@ -74,6 +74,9 @@ Both operations are recorded in the operation log, so they can be undone with "J
 | **JJ: Edit Change...** | Switch to editing a different change |
 | **JJ: Log (Custom Revset)** | Query changes using any revset expression (e.g. `trunk()..@`, `author(me)`) |
 | **JJ: Log View** | Open a read-only log graph view with keybindings on the change under the cursor (see below) |
+| **JJ: File History...** | List the changes that touched the current file; selecting one shows its diff for that file |
+| **JJ: Annotate File** | Show the current file with per-line change annotations (`jj file annotate`) |
+| **JJ: Evolog (Change Evolution)...** | Browse past versions of the current change; selecting one shows its diff |
 | **JJ: Rebase...** | Rebase with full control over source mode (-r/-s/-b) and destination mode (-d/-A/-B) |
 
 ### Conflicts
@@ -190,6 +193,9 @@ These are convenient bindings for the most common operations. Copy whichever you
 - `jj_restore_file`
 - `jj_discard_interactive`
 - `jj_log_view`
+- `jj_file_history`
+- `jj_annotate_file`
+- `jj_evolog`
 - `jj_pull_retrunk`
 - `jj_edit`
 - `jj_log`

@@ -395,3 +395,38 @@ class TestGetDiffRawPaths:
             callback=lambda *args: None, revision="abc123", paths=["a.txt"]
         )
         assert self.captured_args[-2:] == ["--", "a.txt"]
+
+
+class TestFileCommands:
+    """Tests for file history, annotate, and evolog argument building."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.cli = JJCli("/tmp/fake-repo")
+        self.captured_args = None
+
+        def capture_run_async(args, callback, **kwargs):
+            self.captured_args = args
+
+        self.cli.run_async = capture_run_async
+
+    def test_get_log_with_paths(self):
+        """Log paths are appended after a -- separator."""
+        self.cli.get_log(callback=lambda *args: None, paths=["src/a.py"])
+        assert self.captured_args[-2:] == ["--", "src/a.py"]
+
+    def test_get_log_without_paths(self):
+        """Without paths, no separator is appended."""
+        self.cli.get_log(callback=lambda *args: None)
+        assert "--" not in self.captured_args
+
+    def test_evolog_args(self):
+        """Evolog is queried for a revision without graph output."""
+        self.cli.get_evolog(callback=lambda *args: None, revision="abc123")
+        assert self.captured_args[:3] == ["evolog", "-r", "abc123"]
+        assert "--no-graph" in self.captured_args
+
+    def test_annotate_args(self):
+        """Annotate is passed the file path."""
+        self.cli.annotate_file("src/a.py", callback=lambda *args: None)
+        assert self.captured_args == ["file", "annotate", "src/a.py"]
