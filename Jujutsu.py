@@ -43,6 +43,7 @@ from .commands.quick_commands import (  # noqa: F401
     JjDescribeCommand,
     JjDuplicateCommand,
     JjEditCommand,
+    JjFixCommand,
     JjGitFetchCommand,
     JjGitPushChangeCommand,
     JjGitPushCommand,

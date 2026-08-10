@@ -580,6 +580,30 @@ class JjSquashInteractiveCommand(JjWindowCommand):
         self.show_status("Squash cancelled")
 
 
+class JjFixCommand(JjWindowCommand):
+    """Run configured formatters over the mutable stack (jj fix).
+
+    Uses jj's fix.tools configuration; only lines modified in each
+    revision are formatted (jj 0.41 or later).
+    """
+
+    def run(self):
+        cli = self.get_cli()
+        if cli is None:
+            return
+
+        self.show_status("Running jj fix...")
+
+        def on_result(success, message):
+            if success:
+                self.show_status(message)
+                refresh_all_views(self.window)
+            else:
+                self.show_error(f"Failed to fix: {message}")
+
+        cli.fix(on_result)
+
+
 class JjDuplicateCommand(JjWindowCommand):
     """Duplicate the current change in place."""
 

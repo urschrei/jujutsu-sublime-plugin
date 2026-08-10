@@ -502,3 +502,27 @@ class TestTags:
         """Tag delete passes all names."""
         self.cli.tag_delete(["v1", "v2"], callback=lambda *args: None)
         assert self.captured_args == ["tag", "delete", "v1", "v2"]
+
+
+class TestFix:
+    """Tests for fix argument building."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.cli = JJCli("/tmp/fake-repo")
+        self.captured_args = None
+
+        def capture_run_async(args, callback, **kwargs):
+            self.captured_args = args
+
+        self.cli.run_async = capture_run_async
+
+    def test_fix_default(self):
+        """Default fix uses jj's configured default revset."""
+        self.cli.fix(callback=lambda *args: None)
+        assert self.captured_args == ["fix"]
+
+    def test_fix_with_source(self):
+        """An explicit source is passed via -s."""
+        self.cli.fix(callback=lambda *args: None, source="abc123")
+        assert self.captured_args == ["fix", "-s", "abc123"]

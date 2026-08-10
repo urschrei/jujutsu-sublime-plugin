@@ -833,6 +833,27 @@ class JJCli:
         args = ["git", "push", "-c", revision]
         self.run_async(args, on_result)
 
+    def fix(self, callback, source=None):
+        """Run configured formatters over revisions (jj fix).
+
+        Without a source, jj's default applies: the revsets.fix setting,
+        or reachable(@, mutable()). Callback receives (success, message)
+        where message is jj's summary line on success or stderr on failure.
+        """
+
+        def on_result(result):
+            if not result.success:
+                callback(False, result.stderr)
+                return
+            output = (result.stderr or result.stdout).strip()
+            summary = output.split("\n")[0] if output else "Fix complete"
+            callback(True, summary)
+
+        args = ["fix"]
+        if source:
+            args.extend(["-s", source])
+        self.run_async(args, on_result)
+
     def git_fetch(self, callback):
         """Fetch from git remote."""
         self.run_async(["git", "fetch"], _make_success_callback(callback))

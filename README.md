@@ -45,6 +45,7 @@ All commands are available via the command palette (Ctrl+Shift+P / Cmd+Shift+P) 
 | **JJ: Split Change** | Interactively split the current change (select hunks/lines for first commit) |
 | **JJ: Abandon Change** | Abandon the current change (with confirmation) |
 | **JJ: Undo Last Operation** | Undo the last jj operation |
+| **JJ: Fix (Run Formatters)** | Run configured formatters (`fix.tools`) over the mutable stack; only modified lines are formatted |
 | **JJ: Duplicate Change** | Duplicate the current change in place |
 | **JJ: Revert Change...** | Select a change; a new change undoing it is created on top of @ |
 | **JJ: Operation Log (Restore)...** | Browse the operation log and restore the repository to an earlier operation (safe multi-step undo) |

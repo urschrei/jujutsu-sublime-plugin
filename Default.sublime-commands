@@ -124,6 +124,10 @@
         "command": "jj_git_fetch"
     },
     {
+        "caption": "JJ: Fix (Run Formatters)",
+        "command": "jj_fix"
+    },
+    {
         "caption": "JJ: Duplicate Change",
         "command": "jj_duplicate"
     },
