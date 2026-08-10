@@ -219,3 +219,28 @@ class TestGetStatusInfo:
         assert self.captured_args[0] == "log"
         revset = self.captured_args[self.captured_args.index("-r") + 1]
         assert revset == "@ | (mutable() & conflicts())"
+
+
+class TestOpLog:
+    """Tests for op log and op restore argument building."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.cli = JJCli("/tmp/fake-repo")
+        self.captured_args = None
+
+        def capture_run_async(args, callback, **kwargs):
+            self.captured_args = args
+
+        self.cli.run_async = capture_run_async
+
+    def test_op_log_args(self):
+        """op log is queried without graph and with a limit."""
+        self.cli.op_log(callback=lambda *args: None, limit=25)
+        assert self.captured_args[:5] == ["op", "log", "--no-graph", "-n", "25"]
+        assert "-T" in self.captured_args
+
+    def test_op_restore_args(self):
+        """op restore is passed the operation id."""
+        self.cli.op_restore("abc123def456", callback=lambda *args: None)
+        assert self.captured_args == ["op", "restore", "abc123def456"]

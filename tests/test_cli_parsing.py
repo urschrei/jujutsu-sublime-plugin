@@ -274,3 +274,52 @@ class TestHunkHeaderParsing(TestCase):
 
         self.assertIsNotNone(hunk)
         self.assertEqual(hunk.hunk_type, "modified")
+
+
+class TestOperationLogParsing(TestCase):
+    """Test parsing of jj op log output."""
+
+    def setUp(self):
+        """Create a CLI instance for testing."""
+        self.cli = JJCli("/tmp/fake-repo")
+
+    def test_parse_operation(self):
+        """Test parsing a standard operation line."""
+        line = (
+            "c5de1b0e3ec1|||fetch from git remote(s) origin|||"
+            "2026-08-10 09:37:02|||user@host|||false|||true"
+        )
+        op = self.cli._parse_operation_info(line)
+
+        self.assertIsNotNone(op)
+        self.assertEqual(op.op_id, "c5de1b0e3ec1")
+        self.assertEqual(op.description, "fetch from git remote(s) origin")
+        self.assertEqual(op.timestamp, "2026-08-10 09:37:02")
+        self.assertEqual(op.user, "user@host")
+        self.assertEqual(op.is_snapshot, False)
+        self.assertEqual(op.is_current, True)
+
+    def test_parse_snapshot_operation(self):
+        """Test parsing a snapshot operation."""
+        line = (
+            "abcdef123456|||snapshot working copy|||"
+            "2026-08-10 09:00:00|||user@host|||true|||false"
+        )
+        op = self.cli._parse_operation_info(line)
+
+        self.assertIsNotNone(op)
+        self.assertEqual(op.is_snapshot, True)
+        self.assertEqual(op.is_current, False)
+
+    def test_parse_operation_without_description(self):
+        """An empty description falls back to a placeholder."""
+        line = "abcdef123456||||||2026-08-10 09:00:00|||user@host|||false|||false"
+        op = self.cli._parse_operation_info(line)
+
+        self.assertIsNotNone(op)
+        self.assertEqual(op.description, "(no description)")
+
+    def test_parse_malformed_operation_returns_none(self):
+        """Malformed lines return None."""
+        self.assertIsNone(self.cli._parse_operation_info("not enough fields"))
+        self.assertIsNone(self.cli._parse_operation_info(""))

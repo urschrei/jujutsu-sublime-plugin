@@ -36,6 +36,10 @@
         "command": "jj_undo"
     },
     {
+        "caption": "JJ: Operation Log (Restore)...",
+        "command": "jj_op_log"
+    },
+    {
         "caption": "JJ: Pull and Retrunk",
         "command": "jj_pull_retrunk"
     },

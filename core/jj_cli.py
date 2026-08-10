@@ -66,6 +66,18 @@ class DiffHunk:
 
 
 @dataclass
+class OperationInfo:
+    """Information about a jj operation (from jj op log)."""
+
+    op_id: str
+    description: str
+    timestamp: str
+    user: str
+    is_snapshot: bool
+    is_current: bool
+
+
+@dataclass
 class ConflictedFile:
     """A conflicted file as reported by jj resolve --list."""
 
@@ -237,6 +249,65 @@ class JJCli:
         self.run_async(
             ["log", "-r", "@", "-T", self.STATUS_TEMPLATE, "--no-graph"], on_result
         )
+
+    OP_LOG_TEMPLATE = (
+        'id.short(12) ++ "|||" ++ '
+        'description.first_line() ++ "|||" ++ '
+        'time.start().format("%Y-%m-%d %H:%M:%S") ++ "|||" ++ '
+        'user ++ "|||" ++ '
+        'if(snapshot, "true", "false") ++ "|||" ++ '
+        'if(current_operation, "true", "false") ++ "\\n"'
+    )
+
+    def op_log(self, callback, limit=100):
+        """Get the operation log.
+
+        Callback receives a list of OperationInfo, newest first.
+        """
+
+        def on_result(result):
+            if not result.success:
+                callback([])
+                return
+
+            operations = []
+            for line in result.stdout.strip().split("\n"):
+                if not line:
+                    continue
+                info = self._parse_operation_info(line)
+                if info:
+                    operations.append(info)
+            callback(operations)
+
+        args = [
+            "op",
+            "log",
+            "--no-graph",
+            "-n",
+            str(limit),
+            "-T",
+            self.OP_LOG_TEMPLATE,
+        ]
+        self.run_async(args, on_result)
+
+    def _parse_operation_info(self, line):
+        """Parse a line of op log template output into OperationInfo."""
+        parts = line.split(self.FIELD_SEP)
+        if len(parts) < 6:
+            return None
+
+        return OperationInfo(
+            op_id=parts[0],
+            description=parts[1] or "(no description)",
+            timestamp=parts[2],
+            user=parts[3],
+            is_snapshot=parts[4] == "true",
+            is_current=parts[5] == "true",
+        )
+
+    def op_restore(self, op_id, callback):
+        """Restore the repository to the state at the given operation."""
+        self.run_async(["op", "restore", op_id], _make_success_callback(callback))
 
     def get_status_info(self, callback):
         """Get working copy change info plus conflicted mutable changes.

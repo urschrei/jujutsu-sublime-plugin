@@ -45,6 +45,7 @@ All commands are available via the command palette (Ctrl+Shift+P / Cmd+Shift+P) 
 | **JJ: Split Change** | Interactively split the current change (select hunks/lines for first commit) |
 | **JJ: Abandon Change** | Abandon the current change (with confirmation) |
 | **JJ: Undo Last Operation** | Undo the last jj operation |
+| **JJ: Operation Log (Restore)...** | Browse the operation log and restore the repository to an earlier operation (safe multi-step undo) |
 | **JJ: Refresh Status** | Refresh status bar |
 
 ### Squash Operations
