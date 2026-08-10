@@ -1,0 +1,32 @@
+Jujutsu 0.4.7
+=============
+
+Log View Actions, File History, Annotate, Evolog, and Git One-Liners
+
+Changes
+-------
+
+- Log view: new keys acting on the change under the cursor: o (show its
+  diff in a scratch view with diff highlighting), s (squash it into its
+  parent, with confirmation), b (set a bookmark on it).
+
+- Log view: entries are now syntax highlighted. Change ids, bookmarks,
+  conflict and empty markers, and author lines pick up theme colours.
+
+- "JJ: File History..." lists the changes that touched the current file;
+  selecting one shows its diff restricted to that file.
+
+- "JJ: Annotate File" shows per-line change id, author, and date for the
+  current file. The plugin supplies its own annotation template, so
+  outdated user template aliases cannot break the command.
+
+- "JJ: Evolog (Change Evolution)..." browses past versions of the
+  current change; selecting one shows the diff of that version.
+
+- New one-liners: "JJ: Git Fetch", "JJ: Git Push (Tracked Bookmarks)"
+  (plain jj git push, with jj's summary shown in the status bar),
+  "JJ: Duplicate Change", and "JJ: Revert Change..." (creates a new
+  change on top of @ undoing the selected change).
+
+For documentation and source code:
+https://github.com/urschrei/SublimeJJ
