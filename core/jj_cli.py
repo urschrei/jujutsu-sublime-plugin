@@ -682,7 +682,7 @@ class JJCli:
         args = ["rebase", "-d", "trunk()", "-s", "roots(trunk()..stack(@))"]
         self.run_async(args, _make_success_callback(callback))
 
-    def _run_with_diff_editor(self, diff_content, jj_args, callback):
+    def _run_with_diff_editor(self, diff_content, jj_args, callback, reverse=False):
         """Run a jj command with a diff editor script.
 
         Creates a shell script that applies the given diff and uses it as the
@@ -693,11 +693,17 @@ class JJCli:
         1. Copies left to right (baseline - deselects all changes)
         2. Applies the selected diff using patch
 
+        With reverse=True the selected diff is reverse-applied instead. This
+        is used for restore --interactive, where jj presents left=current and
+        right=restored: resetting right to left and reverse-applying the
+        selection discards exactly the selected hunks.
+
         Args:
             diff_content: The diff to apply
             jj_args: Additional jj command arguments (e.g., ["split"] or
                      ["squash", "--interactive", "--from", "@", "--into", "@-"])
             callback: Called with (success, error_message)
+            reverse: Reverse-apply the diff (patch -R)
         """
         task_generation = _generation
 
@@ -718,7 +724,7 @@ rm -rf "$RIGHT"/*
 cp -r "$LEFT"/* "$RIGHT"/ 2>/dev/null || true
 # Apply selected diff to right directory
 # Use -p1 to strip the a/ b/ prefix from git diffs
-patch -d "$RIGHT" -p1 --no-backup-if-mismatch < {shlex.quote(diff_path)} 2>/dev/null
+patch {"-R " if reverse else ""}-d "$RIGHT" -p1 --no-backup-if-mismatch < {shlex.quote(diff_path)} 2>/dev/null
 exit 0
 """
         with tempfile.NamedTemporaryFile(
@@ -800,6 +806,24 @@ exit 0
         if from_rev:
             args.extend(["--from", from_rev])
         self._run_with_diff_editor(diff_content, args, callback)
+
+    def restore_paths(self, paths, callback):
+        """Restore the given paths in the working copy from its parent(s).
+
+        Discards working copy changes to those paths.
+        """
+        args = ["restore", "--"] + list(paths)
+        self.run_async(args, _make_success_callback(callback))
+
+    def restore_interactive(self, diff_content, callback):
+        """Discard the changes in diff_content from the working copy.
+
+        Uses jj restore --interactive; the hunks present in diff_content
+        are restored to their parent state, everything else is kept.
+        """
+        self._run_with_diff_editor(
+            diff_content, ["restore", "--interactive"], callback, reverse=True
+        )
 
     def squash_interactive(self, diff_content, source, destination, callback):
         """Squash selected changes from source into destination.

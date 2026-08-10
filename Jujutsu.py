@@ -35,6 +35,10 @@ from .commands.quick_commands import (  # noqa: F401
     JjSquashInteractiveCommand,
     JjUndoCommand,
 )
+from .commands.restore_commands import (  # noqa: F401
+    JjDiscardInteractiveCommand,
+    JjRestoreFileCommand,
+)
 from .commands.split_command import (  # noqa: F401
     JjSplitCancelCommand,
     JjSplitCollapseCommand,

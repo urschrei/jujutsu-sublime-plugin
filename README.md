@@ -48,6 +48,15 @@ All commands are available via the command palette (Ctrl+Shift+P / Cmd+Shift+P) 
 | **JJ: Operation Log (Restore)...** | Browse the operation log and restore the repository to an earlier operation (safe multi-step undo) |
 | **JJ: Refresh Status** | Refresh status bar |
 
+### Restoring and Discarding Changes
+
+| Command | Description |
+|---------|-------------|
+| **JJ: Restore File (Discard File Changes)** | Restore the current file to its parent-revision state (with confirmation) |
+| **JJ: Discard Changes (Select Hunks)...** | Select specific hunks/lines to discard (same UI as split); everything else is kept |
+
+Both operations are recorded in the operation log, so they can be undone with "JJ: Undo Last Operation" or "JJ: Operation Log (Restore)...".
+
 ### Squash Operations
 
 | Command | Description |
@@ -158,6 +167,8 @@ These are convenient bindings for the most common operations. Copy whichever you
 - `jj_op_log`
 - `jj_conflicts`
 - `jj_conflicted_files`
+- `jj_restore_file`
+- `jj_discard_interactive`
 - `jj_pull_retrunk`
 - `jj_edit`
 - `jj_log`

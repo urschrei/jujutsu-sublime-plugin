@@ -273,3 +273,36 @@ class TestAbsorbInteractive:
             "some diff",
             ["absorb", "--interactive", "--from", "abc123"],
         )
+
+
+class TestRestore:
+    """Tests for restore argument building."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.cli = JJCli("/tmp/fake-repo")
+        self.captured_args = None
+        self.captured_editor = None
+
+        def capture_run_async(args, callback, **kwargs):
+            self.captured_args = args
+
+        def capture_editor(diff_content, jj_args, callback, reverse=False):
+            self.captured_editor = (diff_content, jj_args, reverse)
+
+        self.cli.run_async = capture_run_async
+        self.cli._run_with_diff_editor = capture_editor
+
+    def test_restore_paths(self):
+        """Paths are passed after a -- separator."""
+        self.cli.restore_paths(["a.txt", "src/b.py"], callback=lambda *args: None)
+        assert self.captured_args == ["restore", "--", "a.txt", "src/b.py"]
+
+    def test_restore_interactive_reverse_applies(self):
+        """Interactive restore reverse-applies the selected diff."""
+        self.cli.restore_interactive("some diff", callback=lambda *args: None)
+        assert self.captured_editor == (
+            "some diff",
+            ["restore", "--interactive"],
+            True,
+        )

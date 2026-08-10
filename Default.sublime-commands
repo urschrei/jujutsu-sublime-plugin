@@ -92,6 +92,14 @@
         "command": "jj_split"
     },
     {
+        "caption": "JJ: Restore File (Discard File Changes)",
+        "command": "jj_restore_file"
+    },
+    {
+        "caption": "JJ: Discard Changes (Select Hunks)...",
+        "command": "jj_discard_interactive"
+    },
+    {
         "caption": "JJ: Conflicts...",
         "command": "jj_conflicts"
     },
