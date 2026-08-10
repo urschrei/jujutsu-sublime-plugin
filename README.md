@@ -64,6 +64,15 @@ All commands are available via the command palette (Ctrl+Shift+P / Cmd+Shift+P) 
 | **JJ: Log (Custom Revset)** | Query changes using any revset expression (e.g. `trunk()..@`, `author(me)`) |
 | **JJ: Rebase...** | Rebase with full control over source mode (-r/-s/-b) and destination mode (-d/-A/-B) |
 
+### Conflicts
+
+| Command | Description |
+|---------|-------------|
+| **JJ: Conflicts...** | List all mutable changes containing conflicts; selecting one edits it and shows its conflicted files |
+| **JJ: Conflicted Files** | List conflicted files in the working copy; selecting one opens it at the first conflict marker |
+
+The status bar also flags conflicts: the current change gets a `(conflict)` marker, and a count of other conflicted mutable changes is appended when present.
+
 ### Bookmark Management
 
 | Command | Description |

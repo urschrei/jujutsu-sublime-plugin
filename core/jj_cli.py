@@ -50,6 +50,7 @@ class ChangeInfo:
     # Unique prefix highlighting
     change_id_prefix: str = ""  # The unique prefix part
     change_id_rest: str = ""  # The rest after the prefix
+    has_conflict: bool = False
 
 
 @dataclass
@@ -62,6 +63,14 @@ class DiffHunk:
     new_count: int
     hunk_type: str  # 'added', 'modified', 'deleted'
     lines: list = field(default_factory=list)
+
+
+@dataclass
+class ConflictedFile:
+    """A conflicted file as reported by jj resolve --list."""
+
+    path: str
+    description: str
 
 
 @dataclass
@@ -125,7 +134,8 @@ class JJCli:
         'if(self.contained_in("@"), "true", "false") ++ "|||" ++ '
         'bookmarks.join(",") ++ "|||" ++ '
         'change_id.shortest(8).prefix() ++ "|||" ++ '
-        "change_id.shortest(8).rest()"
+        'change_id.shortest(8).rest() ++ "|||" ++ '
+        'if(conflict, "true", "false")'
     )
 
     LOG_TEMPLATE = (
@@ -139,7 +149,8 @@ class JJCli:
         'if(self.contained_in("@"), "true", "false") ++ "|||" ++ '
         'bookmarks.join(",") ++ "|||" ++ '
         'change_id.shortest(8).prefix() ++ "|||" ++ '
-        'change_id.shortest(8).rest() ++ "\\n"'
+        'change_id.shortest(8).rest() ++ "|||" ++ '
+        'if(conflict, "true", "false") ++ "\\n"'
     )
 
     def __init__(self, repo_root, jj_path=None):
@@ -226,6 +237,90 @@ class JJCli:
         self.run_async(
             ["log", "-r", "@", "-T", self.STATUS_TEMPLATE, "--no-graph"], on_result
         )
+
+    def get_status_info(self, callback):
+        """Get working copy change info plus conflicted mutable changes.
+
+        Callback receives (current_change, conflicted_changes) where
+        current_change is a ChangeInfo (or None on error) and
+        conflicted_changes is a list of ChangeInfo for mutable changes
+        that contain conflicted files (possibly including the working copy).
+        """
+
+        def on_result(result):
+            if not result.success:
+                callback(None, [])
+                return
+
+            current = None
+            conflicted = []
+            for line in result.stdout.strip().split("\n"):
+                if not line:
+                    continue
+                info = self._parse_change_info(line)
+                if info is None:
+                    continue
+                if info.is_working_copy:
+                    current = info
+                if info.has_conflict:
+                    conflicted.append(info)
+            callback(current, conflicted)
+
+        self.run_async(
+            [
+                "log",
+                "-r",
+                "@ | (mutable() & conflicts())",
+                "-T",
+                self.LOG_TEMPLATE,
+                "--no-graph",
+            ],
+            on_result,
+        )
+
+    def resolve_list(self, callback, revision=None):
+        """List conflicted files for a revision (default: @).
+
+        Callback receives (success, files_or_error): a list of
+        ConflictedFile on success, or an error message string on failure.
+        A revision without conflicts yields (True, []).
+        """
+
+        def on_result(result):
+            if not result.success:
+                if "No conflicts found" in result.stderr:
+                    callback(True, [])
+                else:
+                    callback(False, result.stderr)
+                return
+            callback(True, self._parse_resolve_list(result.stdout))
+
+        args = ["resolve", "--list"]
+        if revision:
+            args.extend(["-r", revision])
+        self.run_async(args, on_result)
+
+    # Columns are separated by runs of whitespace, e.g.
+    # "path/to/file.txt    2-sided conflict"
+    RESOLVE_LIST_RE = re.compile(r"^(?P<path>.+?)(?:\t+|\s{2,})(?P<desc>\S.*)$")
+
+    def _parse_resolve_list(self, output):
+        """Parse jj resolve --list output into ConflictedFile objects."""
+        files = []
+        for line in output.splitlines():
+            if not line.strip():
+                continue
+            match = self.RESOLVE_LIST_RE.match(line)
+            if match:
+                files.append(
+                    ConflictedFile(
+                        path=match.group("path"),
+                        description=match.group("desc").strip(),
+                    )
+                )
+            else:
+                files.append(ConflictedFile(path=line.strip(), description=""))
+        return files
 
     def get_log(self, callback, revset="::", limit=50):
         """Get commit log."""
@@ -661,6 +756,7 @@ exit 0
             bookmarks=[b for b in parts[8].split(",") if b],
             change_id_prefix=change_id_prefix,
             change_id_rest=change_id_rest,
+            has_conflict=len(parts) > 11 and parts[11] == "true",
         )
 
     def _parse_git_diff(self, diff_output, target_file=None):

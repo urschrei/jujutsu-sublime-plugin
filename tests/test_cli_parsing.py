@@ -66,6 +66,45 @@ class TestChangeInfoParsing(TestCase):
         self.assertEqual(info.is_immutable, True)
         self.assertEqual(info.bookmarks, ["trunk"])
 
+    def test_parse_conflicted_change(self):
+        """Test parsing a change with a conflict flag."""
+        line = (
+            "abcd1234|||fedcba98|||Fix the bug|||"
+            "Test Author|||2024-01-01|||"
+            "false|||false|||true|||main|||"
+            "abcd|||1234|||true"
+        )
+        info = self.cli._parse_change_info(line)
+
+        self.assertIsNotNone(info)
+        self.assertEqual(info.has_conflict, True)
+
+    def test_parse_unconflicted_change(self):
+        """Test parsing a change with an explicit false conflict flag."""
+        line = (
+            "abcd1234|||fedcba98|||Fix the bug|||"
+            "Test Author|||2024-01-01|||"
+            "false|||false|||true|||main|||"
+            "abcd|||1234|||false"
+        )
+        info = self.cli._parse_change_info(line)
+
+        self.assertIsNotNone(info)
+        self.assertEqual(info.has_conflict, False)
+
+    def test_parse_line_without_conflict_field(self):
+        """Lines without the conflict field default to no conflict."""
+        line = (
+            "abcd1234|||fedcba98|||Fix the bug|||"
+            "Test Author|||2024-01-01|||"
+            "false|||false|||true|||main|||"
+            "abcd|||1234"
+        )
+        info = self.cli._parse_change_info(line)
+
+        self.assertIsNotNone(info)
+        self.assertEqual(info.has_conflict, False)
+
     def test_parse_malformed_line_returns_none(self):
         """Test that malformed lines return None."""
         info = self.cli._parse_change_info("not enough fields")
@@ -73,6 +112,55 @@ class TestChangeInfoParsing(TestCase):
 
         info = self.cli._parse_change_info("")
         self.assertIsNone(info)
+
+
+class TestResolveListParsing(TestCase):
+    """Test parsing of jj resolve --list output."""
+
+    def setUp(self):
+        """Create a CLI instance for testing."""
+        self.cli = JJCli("/tmp/fake-repo")
+
+    def test_parse_conflicted_files(self):
+        """Test parsing standard resolve --list output."""
+        output = "a.txt    2-sided conflict\nsrc/b.py    2-sided conflict\n"
+        files = self.cli._parse_resolve_list(output)
+
+        self.assertEqual(len(files), 2)
+        self.assertEqual(files[0].path, "a.txt")
+        self.assertEqual(files[0].description, "2-sided conflict")
+        self.assertEqual(files[1].path, "src/b.py")
+
+    def test_parse_path_with_single_spaces(self):
+        """Paths containing single spaces are kept intact."""
+        output = "my file.txt    2-sided conflict\n"
+        files = self.cli._parse_resolve_list(output)
+
+        self.assertEqual(len(files), 1)
+        self.assertEqual(files[0].path, "my file.txt")
+        self.assertEqual(files[0].description, "2-sided conflict")
+
+    def test_parse_tab_separated(self):
+        """Tab-separated columns are handled."""
+        output = "a.txt\t2-sided conflict\n"
+        files = self.cli._parse_resolve_list(output)
+
+        self.assertEqual(len(files), 1)
+        self.assertEqual(files[0].path, "a.txt")
+        self.assertEqual(files[0].description, "2-sided conflict")
+
+    def test_parse_line_without_description(self):
+        """A line with no separator falls back to path only."""
+        output = "just-a-path.txt\n"
+        files = self.cli._parse_resolve_list(output)
+
+        self.assertEqual(len(files), 1)
+        self.assertEqual(files[0].path, "just-a-path.txt")
+        self.assertEqual(files[0].description, "")
+
+    def test_parse_empty_output(self):
+        """Empty output yields no files."""
+        self.assertEqual(self.cli._parse_resolve_list(""), [])
 
 
 class TestDiffParsing(TestCase):

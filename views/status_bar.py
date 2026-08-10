@@ -23,7 +23,7 @@ def update_status_bar(view):
         view.erase_status("jj")
         return
 
-    def on_change_info(info):
+    def on_status_info(info, conflicted):
         if info is None:
             view.erase_status("jj")
             return
@@ -33,11 +33,23 @@ def update_status_bar(view):
         if len(desc) > 40:
             desc = desc[:37] + "..."
 
-        empty_marker = " (empty)" if info.is_empty else ""
-        status = f"jj: {info.change_id}{empty_marker} - {desc}"
+        markers = ""
+        if info.is_empty:
+            markers += " (empty)"
+        if info.has_conflict:
+            markers += " (conflict)"
+        status = f"jj: {info.change_id}{markers} - {desc}"
+
+        # Conflicts elsewhere in the repo (the working copy is already
+        # flagged by its own marker above)
+        others = [c for c in conflicted if not c.is_working_copy]
+        if others:
+            noun = "change" if len(others) == 1 else "changes"
+            status += f" | {len(others)} conflicted {noun}"
+
         view.set_status("jj", status)
 
-    cli.get_current_change(on_change_info)
+    cli.get_status_info(on_status_info)
 
 
 def clear_status_bar(view):

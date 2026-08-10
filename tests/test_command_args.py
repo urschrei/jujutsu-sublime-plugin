@@ -174,3 +174,48 @@ class TestRebaseFlexible:
             callback=lambda *args: None,
         )
         assert self.captured_args == ["rebase", "-s", "feature", "-d", "main"]
+
+
+class TestResolveList:
+    """Tests for resolve_list argument building."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.cli = JJCli("/tmp/fake-repo")
+        self.captured_args = None
+
+        def capture_run_async(args, callback, **kwargs):
+            self.captured_args = args
+
+        self.cli.run_async = capture_run_async
+
+    def test_default_revision(self):
+        """Without a revision, no -r flag is passed."""
+        self.cli.resolve_list(callback=lambda *args: None)
+        assert self.captured_args == ["resolve", "--list"]
+
+    def test_explicit_revision(self):
+        """An explicit revision is passed via -r."""
+        self.cli.resolve_list(callback=lambda *args: None, revision="abc123")
+        assert self.captured_args == ["resolve", "--list", "-r", "abc123"]
+
+
+class TestGetStatusInfo:
+    """Tests for the combined status query."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.cli = JJCli("/tmp/fake-repo")
+        self.captured_args = None
+
+        def capture_run_async(args, callback, **kwargs):
+            self.captured_args = args
+
+        self.cli.run_async = capture_run_async
+
+    def test_revset_includes_working_copy_and_conflicts(self):
+        """The query covers @ and conflicted mutable changes."""
+        self.cli.get_status_info(callback=lambda *args: None)
+        assert self.captured_args[0] == "log"
+        revset = self.captured_args[self.captured_args.index("-r") + 1]
+        assert revset == "@ | (mutable() & conflicts())"

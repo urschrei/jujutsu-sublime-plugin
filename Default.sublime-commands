@@ -84,6 +84,14 @@
         "command": "jj_split"
     },
     {
+        "caption": "JJ: Conflicts...",
+        "command": "jj_conflicts"
+    },
+    {
+        "caption": "JJ: Conflicted Files",
+        "command": "jj_conflicted_files"
+    },
+    {
         "caption": "Preferences: Jujutsu Settings",
         "command": "edit_settings",
         "args": {

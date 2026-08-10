@@ -10,6 +10,7 @@ KIND_CHANGE = (sublime.KIND_ID_VARIABLE, "C", "Change")
 KIND_WORKING_COPY = (sublime.KIND_ID_FUNCTION, "@", "Working Copy")
 KIND_BOOKMARK = (sublime.KIND_ID_MARKUP, "B", "Bookmark")
 KIND_ACTION = (sublime.KIND_ID_SNIPPET, ">", "Action")
+KIND_CONFLICT = (sublime.KIND_ID_AMBIGUOUS, "!", "Conflict")
 
 # Default limit for log queries
 DEFAULT_LOG_LIMIT = 50
@@ -23,6 +24,8 @@ def build_change_annotations(change, include_immutable=True):
     annotations = []
     if change.is_empty:
         annotations.append("empty")
+    if change.has_conflict:
+        annotations.append("conflict")
     if include_immutable and change.is_immutable:
         annotations.append("immutable")
     if change.bookmarks:

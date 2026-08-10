@@ -7,6 +7,10 @@ This is the main entry point for the plugin, providing:
 
 import sublime
 
+from .commands.conflict_commands import (  # noqa: F401
+    JjConflictedFilesCommand,
+    JjConflictsCommand,
+)
 from .commands.quick_commands import (  # noqa: F401
     JjAbandonCommand,
     JjAbsorbCommand,
