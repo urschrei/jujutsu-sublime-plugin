@@ -1,0 +1,33 @@
+Jujutsu 0.4.6
+=============
+
+Conflict Awareness, Operation Log, Interactive Absorb and Restore, Log View
+
+Changes
+-------
+
+- Conflict awareness: the status bar now flags the current change with
+  (conflict) and shows a count of other conflicted mutable changes. New
+  commands "JJ: Conflicts..." (browse conflicted changes) and
+  "JJ: Conflicted Files" (open a conflicted file at its first marker).
+
+- Operation log: "JJ: Operation Log (Restore)..." browses jj op log and
+  restores the repository to an earlier operation, giving safe multi-step
+  undo. Restores are themselves undoable.
+
+- "JJ: Absorb Interactive..." selects specific hunks/lines to absorb into
+  ancestor commits, using the same UI as split. Requires jj 0.44 or later.
+
+- "JJ: Restore File (Discard File Changes)" restores the current file to
+  its parent-revision state, and "JJ: Discard Changes (Select Hunks)..."
+  discards only the selected hunks. Both are undoable via the operation
+  log.
+
+- "JJ: Log View" opens a persistent read-only tab showing the jj log
+  graph. Keys act on the change under the cursor: enter (edit), n (new
+  child), d (describe), a (abandon), r (refresh), ? (help), escape
+  (close). Configurable via the log_view_revset and log_view_limit
+  settings.
+
+For documentation and source code:
+https://github.com/urschrei/SublimeJJ

@@ -73,7 +73,7 @@ from .listeners.split_events import (  # noqa: F401
 )
 
 # Plugin version
-__version__ = "0.3.0"
+__version__ = "0.4.6"
 
 
 def plugin_loaded():
