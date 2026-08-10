@@ -148,6 +148,26 @@
         "command": "jj_run"
     },
     {
+        "caption": "JJ: Workspace List",
+        "command": "jj_workspace_list"
+    },
+    {
+        "caption": "JJ: Workspace Add...",
+        "command": "jj_workspace_add"
+    },
+    {
+        "caption": "JJ: Workspace Forget...",
+        "command": "jj_workspace_forget"
+    },
+    {
+        "caption": "JJ: Workspace Rename",
+        "command": "jj_workspace_rename"
+    },
+    {
+        "caption": "JJ: Workspace Update Stale",
+        "command": "jj_workspace_update_stale"
+    },
+    {
         "caption": "JJ: Split Change...",
         "command": "jj_split"
     },

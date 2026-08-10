@@ -611,3 +611,121 @@ class TestRunInRevision:
             timeout=120,
         )
         assert self.captured_timeout == 120
+
+
+class TestWorkspaces:
+    """Tests for workspace argument building."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.cli = JJCli("/tmp/fake-repo")
+        self.captured_args = None
+
+        def capture_run_async(args, callback, **kwargs):
+            self.captured_args = args
+
+        self.cli.run_async = capture_run_async
+
+    def test_workspace_list_args(self):
+        """Workspace list uses the workspace template."""
+        self.cli.workspace_list(callback=lambda *args: None)
+        assert self.captured_args[:2] == ["workspace", "list"]
+        assert "-T" in self.captured_args
+
+    def test_workspace_add_default_name(self):
+        """Without a name, jj derives it from the directory basename."""
+        self.cli.workspace_add("/tmp/ws", callback=lambda *args: None)
+        assert self.captured_args == ["workspace", "add", "/tmp/ws"]
+
+    def test_workspace_add_explicit_name(self):
+        """An explicit name is passed via --name."""
+        self.cli.workspace_add("/tmp/ws", callback=lambda *args: None, name="review")
+        assert self.captured_args == [
+            "workspace",
+            "add",
+            "/tmp/ws",
+            "--name",
+            "review",
+        ]
+
+    def test_workspace_forget_args(self):
+        """All selected workspace names are passed."""
+        self.cli.workspace_forget(["a", "b"], callback=lambda *args: None)
+        assert self.captured_args == ["workspace", "forget", "a", "b"]
+
+    def test_workspace_rename_args(self):
+        """Rename passes the new name."""
+        self.cli.workspace_rename("newname", callback=lambda *args: None)
+        assert self.captured_args == ["workspace", "rename", "newname"]
+
+    def test_workspace_update_stale_args(self):
+        """Update stale takes no arguments."""
+        self.cli.workspace_update_stale(callback=lambda *args: None)
+        assert self.captured_args == ["workspace", "update-stale"]
+
+
+class TestRebaseInsert:
+    """Tests for insert-before/after rebase argument building."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.cli = JJCli("/tmp/fake-repo")
+        self.captured_args = None
+
+        def capture_run_async(args, callback, **kwargs):
+            self.captured_args = args
+
+        self.cli.run_async = capture_run_async
+
+    def test_insert_before(self):
+        """Insert-before places the revision before the target."""
+        self.cli.rebase_insert_before("abc123", "def456", callback=lambda *a: None)
+        assert self.captured_args == [
+            "rebase",
+            "-r",
+            "abc123",
+            "--insert-before",
+            "def456",
+        ]
+
+    def test_insert_after(self):
+        """Insert-after places the revision after the target."""
+        self.cli.rebase_insert_after("abc123", "def456", callback=lambda *a: None)
+        assert self.captured_args == [
+            "rebase",
+            "-r",
+            "abc123",
+            "--insert-after",
+            "def456",
+        ]
+
+
+class TestHoverDataQueries:
+    """Tests for diff stat and description argument building."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.cli = JJCli("/tmp/fake-repo")
+        self.captured_args = None
+
+        def capture_run_async(args, callback, **kwargs):
+            self.captured_args = args
+
+        self.cli.run_async = capture_run_async
+
+    def test_diff_stat_args(self):
+        """Diff stat targets the given revision."""
+        self.cli.get_diff_stat(callback=lambda *args: None, revision="abc123")
+        assert self.captured_args == ["diff", "-r", "abc123", "--stat"]
+
+    def test_description_args(self):
+        """Description is fetched without graph decoration."""
+        self.cli.get_description(callback=lambda *args: None, revision="abc123")
+        assert self.captured_args == [
+            "log",
+            "-r",
+            "abc123",
+            "--no-graph",
+            "-T",
+            "description",
+        ]

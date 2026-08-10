@@ -427,3 +427,37 @@ class TestFileSearchParsing(TestCase):
 
         self.assertTrue(result["ok"])
         self.assertEqual(result["payload"], [])
+
+
+class TestAgeFieldParsing(TestCase):
+    """Test parsing of the relative age template field."""
+
+    def setUp(self):
+        """Create a CLI instance for testing."""
+        self.cli = JJCli("/tmp/fake-repo")
+
+    def test_parse_age_field(self):
+        """The thirteenth field is the relative age."""
+        line = (
+            "abcd1234|||fedcba98|||Fix the bug|||"
+            "Test Author|||2024-01-01|||"
+            "false|||false|||true|||main|||"
+            "abcd|||1234|||false|||3 days ago"
+        )
+        info = self.cli._parse_change_info(line)
+
+        self.assertIsNotNone(info)
+        self.assertEqual(info.age, "3 days ago")
+
+    def test_missing_age_field_defaults_to_empty(self):
+        """Lines without the age field yield an empty age."""
+        line = (
+            "abcd1234|||fedcba98|||Fix the bug|||"
+            "Test Author|||2024-01-01|||"
+            "false|||false|||true|||main|||"
+            "abcd|||1234|||false"
+        )
+        info = self.cli._parse_change_info(line)
+
+        self.assertIsNotNone(info)
+        self.assertEqual(info.age, "")

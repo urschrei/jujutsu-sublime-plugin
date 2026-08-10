@@ -1,0 +1,47 @@
+Jujutsu 0.4.8
+=============
+
+Tags, Workspaces, File Search, Fix, Parallelize, and Run
+
+Changes
+-------
+
+- Tag management: "JJ: Tag List" (select to navigate), "JJ: Tag Set",
+  and "JJ: Tag Delete" (multi-select). Requires jj 0.44 or later.
+
+- Workspace management: "JJ: Workspace List" (select to view a
+  workspace's working-copy diff), "JJ: Workspace Add..." (creates the
+  workspace and opens it in a new window), "JJ: Workspace Forget...",
+  "JJ: Workspace Rename", and "JJ: Workspace Update Stale".
+
+- "JJ: Fix (Run Formatters)" runs the formatters configured in
+  fix.tools over the mutable stack; only modified lines are formatted.
+
+- "JJ: File Search..." searches file contents with a regex; selecting
+  a match jumps to the file and line.
+
+- "JJ: Parallelize Changes..." makes selected changes siblings instead
+  of a linear chain, using a multi-select picker.
+
+- "JJ: Run Command on Revset..." runs a shell command once per change
+  (e.g. a test suite) in private working copies, without modifying any
+  commits. Results are shown in an output panel with a PASS/FAIL line
+  per change and captured output for failures. New settings:
+  run_default_revset and run_command_timeout.
+
+- "JJ: Git Push (Tracked Bookmarks)" now offers a confirmed retry with
+  --allow-conflicts when the push is refused due to conflicts.
+
+- Log view: alt+up and alt+down swap the change under the cursor with
+  its child or parent, for reordering a linear stack. Changes with
+  multiple parents or children are refused; use "JJ: Rebase..." for
+  those.
+
+- Log view chrome: hovering an entry shows a detail card with the full
+  description, diff stat, and clickable edit/diff/squash/abandon
+  actions; right-aligned annotations show relative age, bookmarks, and
+  working-copy or conflict markers; the entry under the cursor is
+  outlined; and the gutter marks the working copy and conflicts.
+
+For documentation and source code:
+https://github.com/urschrei/SublimeJJ

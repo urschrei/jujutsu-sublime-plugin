@@ -24,6 +24,8 @@ from .commands.log_view_commands import (  # noqa: F401
     JjLogViewDescribeCommand,
     JjLogViewEditCommand,
     JjLogViewHelpCommand,
+    JjLogViewMoveDownCommand,
+    JjLogViewMoveUpCommand,
     JjLogViewNewCommand,
     JjLogViewRefreshCommand,
     JjLogViewReplaceCommand,
@@ -82,6 +84,13 @@ from .commands.tag_commands import (  # noqa: F401
     JjTagListCommand,
     JjTagSetCommand,
 )
+from .commands.workspace_commands import (  # noqa: F401
+    JjWorkspaceAddCommand,
+    JjWorkspaceForgetCommand,
+    JjWorkspaceListCommand,
+    JjWorkspaceRenameCommand,
+    JjWorkspaceUpdateStaleCommand,
+)
 from .core.jj_cli import init_executor, shutdown_executor
 from .listeners.file_events import JjEventListener  # noqa: F401
 from .listeners.log_view_events import (  # noqa: F401
@@ -94,7 +103,7 @@ from .listeners.split_events import (  # noqa: F401
 )
 
 # Plugin version
-__version__ = "0.4.7"
+__version__ = "0.4.8"
 
 
 def plugin_loaded():

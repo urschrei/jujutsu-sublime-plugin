@@ -51,6 +51,7 @@ class ChangeInfo:
     change_id_prefix: str = ""  # The unique prefix part
     change_id_rest: str = ""  # The rest after the prefix
     has_conflict: bool = False
+    age: str = ""  # Relative age, e.g. "3 days ago"
 
 
 @dataclass
@@ -84,6 +85,15 @@ class EvologEntry:
     commit_id: str
     description: str
     timestamp: str
+
+
+@dataclass
+class WorkspaceInfo:
+    """Information about a jj workspace."""
+
+    name: str
+    change_id: str
+    description: str
 
 
 @dataclass
@@ -180,7 +190,8 @@ class JJCli:
         'bookmarks.join(",") ++ "|||" ++ '
         'change_id.shortest(8).prefix() ++ "|||" ++ '
         'change_id.shortest(8).rest() ++ "|||" ++ '
-        'if(conflict, "true", "false") ++ "\\n"'
+        'if(conflict, "true", "false") ++ "|||" ++ '
+        'committer.timestamp().ago() ++ "\\n"'
     )
 
     def __init__(self, repo_root, jj_path=None):
@@ -531,46 +542,73 @@ class JJCli:
     )
 
     def get_log_graph(self, callback, revset=None, limit=200):
-        """Get the log rendered as a graph, plus the change ids it contains.
+        """Get the log rendered as a graph, plus per-change metadata.
 
-        Callback receives (success, text_or_error, change_ids) where
-        change_ids is a set of the change id strings present in the graph.
-        Without a revset, jj's configured default revset is used.
+        Callback receives (success, text_or_error, changes_by_id) where
+        changes_by_id maps each change id present in the graph to its
+        ChangeInfo. Without a revset, jj's configured default revset is
+        used.
         """
 
         graph_args = ["log", "-T", self.GRAPH_LOG_TEMPLATE, "-n", str(limit)]
-        id_args = [
+        info_args = [
             "log",
             "--no-graph",
             "-T",
-            'change_id.shortest(8) ++ "\\n"',
+            self.LOG_TEMPLATE,
             "-n",
             str(limit),
         ]
         if revset:
             graph_args.extend(["-r", revset])
-            id_args.extend(["-r", revset])
+            info_args.extend(["-r", revset])
 
         def on_graph(result):
             if not result.success:
-                callback(False, result.stderr, set())
+                callback(False, result.stderr, {})
                 return
             graph_text = result.stdout
 
-            def on_ids(id_result):
-                if not id_result.success:
-                    callback(False, id_result.stderr, set())
+            def on_info(info_result):
+                if not info_result.success:
+                    callback(False, info_result.stderr, {})
                     return
-                ids = {
-                    line.strip()
-                    for line in id_result.stdout.splitlines()
-                    if line.strip()
-                }
-                callback(True, graph_text, ids)
+                changes_by_id = {}
+                for line in info_result.stdout.strip().split("\n"):
+                    if not line:
+                        continue
+                    info = self._parse_change_info(line)
+                    if info:
+                        changes_by_id[info.change_id] = info
+                callback(True, graph_text, changes_by_id)
 
-            self.run_async(id_args, on_ids)
+            self.run_async(info_args, on_info)
 
         self.run_async(graph_args, on_graph)
+
+    def get_diff_stat(self, callback, revision="@"):
+        """Get diff statistics for a revision.
+
+        Callback receives (success, text_or_error).
+        """
+
+        def on_result(result):
+            callback(result.success, result.stdout if result.success else result.stderr)
+
+        self.run_async(["diff", "-r", revision, "--stat"], on_result)
+
+    def get_description(self, callback, revision="@"):
+        """Get the full multi-line description of a revision.
+
+        Callback receives (success, text_or_error).
+        """
+
+        def on_result(result):
+            callback(result.success, result.stdout if result.success else result.stderr)
+
+        self.run_async(
+            ["log", "-r", revision, "--no-graph", "-T", "description"], on_result
+        )
 
     def get_log(self, callback, revset="::", limit=50, paths=None):
         """Get commit log, optionally restricted to the given paths."""
@@ -943,6 +981,64 @@ class JJCli:
         args = ["parallelize"] + list(revisions)
         self.run_async(args, _make_success_callback(callback))
 
+    WORKSPACE_TEMPLATE = (
+        'name ++ "|||" ++ '
+        'target.change_id().short(8) ++ "|||" ++ '
+        "if(target.description(), target.description().first_line(), "
+        '"(no description)") ++ "\\n"'
+    )
+
+    def workspace_list(self, callback):
+        """Get the list of workspaces with their working-copy targets."""
+
+        def on_result(result):
+            if not result.success:
+                callback([])
+                return
+
+            workspaces = []
+            for line in result.stdout.strip().split("\n"):
+                if not line:
+                    continue
+                parts = line.split(self.FIELD_SEP)
+                if len(parts) >= 3:
+                    workspaces.append(
+                        WorkspaceInfo(
+                            name=parts[0],
+                            change_id=parts[1],
+                            description=parts[2],
+                        )
+                    )
+            callback(workspaces)
+
+        self.run_async(["workspace", "list", "-T", self.WORKSPACE_TEMPLATE], on_result)
+
+    def workspace_add(self, path, callback, name=None):
+        """Add a workspace at the given path.
+
+        The new workspace's working-copy commit shares the current
+        working-copy commit's parents.
+        """
+        args = ["workspace", "add", path]
+        if name:
+            args.extend(["--name", name])
+        self.run_async(args, _make_success_callback(callback))
+
+    def workspace_forget(self, names, callback):
+        """Stop tracking one or more workspaces' working-copy commits."""
+        args = ["workspace", "forget"] + list(names)
+        self.run_async(args, _make_success_callback(callback))
+
+    def workspace_rename(self, new_name, callback):
+        """Rename the current workspace."""
+        self.run_async(
+            ["workspace", "rename", new_name], _make_success_callback(callback)
+        )
+
+    def workspace_update_stale(self, callback):
+        """Update a stale working copy to the repo's current state."""
+        self.run_async(["workspace", "update-stale"], _make_success_callback(callback))
+
     def run_in_revision(self, command, revision, callback, timeout=None):
         """Run a command in a private working copy of a revision.
 
@@ -1144,6 +1240,7 @@ exit 0
             change_id_prefix=change_id_prefix,
             change_id_rest=change_id_rest,
             has_conflict=len(parts) > 11 and parts[11] == "true",
+            age=parts[12] if len(parts) > 12 else "",
         )
 
     def _parse_git_diff(self, diff_output, target_file=None):

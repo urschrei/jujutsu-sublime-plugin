@@ -28,9 +28,11 @@ HELP_TEXT = """
     <p><code>d</code> describe change under cursor</p>
     <p><code>a</code> abandon change under cursor</p>
     <p><code>s</code> squash change under cursor into its parent</p>
+    <p><code>alt+up</code> / <code>alt+down</code> swap change with its child / parent</p>
     <p><code>b</code> set bookmark on change under cursor</p>
     <p><code>r</code> refresh</p>
     <p><code>escape</code> close</p>
+    <p>hover an entry for details and actions</p>
 </body>
 """
 
@@ -284,6 +286,72 @@ class JjLogViewBookmarkCommand(LogViewTextCommand):
         window.show_input_panel(
             f"Bookmark name for {change_id}:", "", on_done, None, None
         )
+
+
+class JjLogViewMoveUpCommand(LogViewTextCommand):
+    """Move the change under the cursor one step later in the stack.
+
+    Swaps the change with its child (visually: one entry up in the log).
+    """
+
+    def run(self, edit):
+        cli, change_id = self.get_target()
+        if cli is None or change_id is None:
+            return
+
+        def on_log(children):
+            if not children:
+                self.show_status(f"{change_id} has no child to swap with")
+                return
+            if len(children) > 1:
+                self.show_status(f"{change_id} has multiple children; use JJ: Rebase")
+                return
+
+            child = children[0]
+
+            def on_result(success, error):
+                if success:
+                    self.show_status(f"Moved {change_id} after {child.change_id}")
+                    self.refresh()
+                else:
+                    self.show_error(f"Failed to move: {error}")
+
+            cli.rebase_insert_after(change_id, child.change_id, on_result)
+
+        cli.get_log(on_log, revset=f"{change_id}+", limit=5)
+
+
+class JjLogViewMoveDownCommand(LogViewTextCommand):
+    """Move the change under the cursor one step earlier in the stack.
+
+    Swaps the change with its parent (visually: one entry down in the log).
+    """
+
+    def run(self, edit):
+        cli, change_id = self.get_target()
+        if cli is None or change_id is None:
+            return
+
+        def on_log(parents):
+            if not parents:
+                self.show_status(f"{change_id} has no parent to swap with")
+                return
+            if len(parents) > 1:
+                self.show_status(f"{change_id} has multiple parents; use JJ: Rebase")
+                return
+
+            parent = parents[0]
+
+            def on_result(success, error):
+                if success:
+                    self.show_status(f"Moved {change_id} before {parent.change_id}")
+                    self.refresh()
+                else:
+                    self.show_error(f"Failed to move: {error}")
+
+            cli.rebase_insert_before(change_id, parent.change_id, on_result)
+
+        cli.get_log(on_log, revset=f"{change_id}-", limit=5)
 
 
 class JjLogViewShowDiffCommand(LogViewTextCommand):

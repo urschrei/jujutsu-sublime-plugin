@@ -85,6 +85,16 @@
         "context": [{"key": "jj_log_view", "operand": true}]
     },
     {
+        "keys": ["alt+up"],
+        "command": "jj_log_view_move_up",
+        "context": [{"key": "jj_log_view", "operand": true}]
+    },
+    {
+        "keys": ["alt+down"],
+        "command": "jj_log_view_move_down",
+        "context": [{"key": "jj_log_view", "operand": true}]
+    },
+    {
         "keys": ["b"],
         "command": "jj_log_view_bookmark",
         "context": [{"key": "jj_log_view", "operand": true}]

@@ -109,12 +109,34 @@ The status bar also flags conflicts: the current change gets a `(conflict)` mark
 | `d` | Set its description |
 | `a` | Abandon it (with confirmation) |
 | `s` | Squash it into its parent (with confirmation) |
+| `alt+up` / `alt+down` | Swap it with its child / parent (linear reordering) |
 | `b` | Set a bookmark on it |
 | `r` | Refresh the view |
 | `?` | Show this key reference |
 | `escape` | Close the view |
 
 The view refreshes automatically after each operation. Entries are syntax highlighted: change ids, bookmarks, conflict and empty markers, and author lines each pick up theme colours.
+
+Further chrome:
+
+- Hovering an entry shows a detail card with the full description, author, timestamps, a diff stat, and clickable edit/diff/squash/abandon actions.
+- Right-aligned annotations show each entry's relative age, bookmarks, and working-copy or conflict markers.
+- The entry under the cursor is outlined, making the target of key presses unambiguous.
+- The gutter marks the working copy (circle) and conflicted entries (dot).
+
+### Workspaces
+
+Workspaces are additional working copies attached to the same repository, each with its own working-copy commit.
+
+| Command | Description |
+|---------|-------------|
+| **JJ: Workspace List** | List workspaces; selecting one shows its working-copy diff |
+| **JJ: Workspace Add...** | Create a workspace (shares the current change's parents) and open it in a new window |
+| **JJ: Workspace Forget...** | Stop tracking one or more workspaces (multi-select) |
+| **JJ: Workspace Rename** | Rename the current workspace |
+| **JJ: Workspace Update Stale** | Update this working copy after another workspace has rewritten it |
+
+jj does not record workspace directory paths, so the list command cannot open existing workspaces' folders; only newly created workspaces are opened automatically.
 
 ### Bookmark Management
 
@@ -228,6 +250,11 @@ These are convenient bindings for the most common operations. Copy whichever you
 - `jj_file_search`
 - `jj_parallelize`
 - `jj_run`
+- `jj_workspace_list`
+- `jj_workspace_add`
+- `jj_workspace_forget`
+- `jj_workspace_rename`
+- `jj_workspace_update_stale`
 - `jj_pull_retrunk`
 - `jj_edit`
 - `jj_log`
