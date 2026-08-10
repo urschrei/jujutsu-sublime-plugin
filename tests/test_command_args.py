@@ -430,3 +430,37 @@ class TestFileCommands:
         """Annotate is passed the file path."""
         self.cli.annotate_file("src/a.py", callback=lambda *args: None)
         assert self.captured_args == ["file", "annotate", "src/a.py"]
+
+
+class TestOneLiners:
+    """Tests for git push, duplicate, and revert argument building."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.cli = JJCli("/tmp/fake-repo")
+        self.captured_args = None
+
+        def capture_run_async(args, callback, **kwargs):
+            self.captured_args = args
+
+        self.cli.run_async = capture_run_async
+
+    def test_git_push_args(self):
+        """Plain push takes no extra arguments."""
+        self.cli.git_push(callback=lambda *args: None)
+        assert self.captured_args == ["git", "push"]
+
+    def test_duplicate_default(self):
+        """Default duplicate targets the current change."""
+        self.cli.duplicate(callback=lambda *args: None)
+        assert self.captured_args == ["duplicate"]
+
+    def test_duplicate_with_revision(self):
+        """Duplicate with a revision targets that revision."""
+        self.cli.duplicate(callback=lambda *args: None, revision="abc123")
+        assert self.captured_args == ["duplicate", "abc123"]
+
+    def test_revert_args(self):
+        """Revert applies the reverse of a revision on top of @."""
+        self.cli.revert("abc123", callback=lambda *args: None)
+        assert self.captured_args == ["revert", "-r", "abc123", "--onto", "@"]

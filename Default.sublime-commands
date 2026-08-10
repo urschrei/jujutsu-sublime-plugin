@@ -104,6 +104,22 @@
         "command": "jj_git_push_change"
     },
     {
+        "caption": "JJ: Git Push (Tracked Bookmarks)",
+        "command": "jj_git_push"
+    },
+    {
+        "caption": "JJ: Git Fetch",
+        "command": "jj_git_fetch"
+    },
+    {
+        "caption": "JJ: Duplicate Change",
+        "command": "jj_duplicate"
+    },
+    {
+        "caption": "JJ: Revert Change...",
+        "command": "jj_revert"
+    },
+    {
         "caption": "JJ: Split Change...",
         "command": "jj_split"
     },

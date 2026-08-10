@@ -45,6 +45,8 @@ All commands are available via the command palette (Ctrl+Shift+P / Cmd+Shift+P) 
 | **JJ: Split Change** | Interactively split the current change (select hunks/lines for first commit) |
 | **JJ: Abandon Change** | Abandon the current change (with confirmation) |
 | **JJ: Undo Last Operation** | Undo the last jj operation |
+| **JJ: Duplicate Change** | Duplicate the current change in place |
+| **JJ: Revert Change...** | Select a change; a new change undoing it is created on top of @ |
 | **JJ: Operation Log (Restore)...** | Browse the operation log and restore the repository to an earlier operation (safe multi-step undo) |
 | **JJ: Refresh Status** | Refresh status bar |
 
@@ -122,6 +124,8 @@ The view refreshes automatically after each operation. Entries are syntax highli
 | Command | Description |
 |---------|-------------|
 | **JJ: Git Push (Create Bookmark)** | Push a change by creating a bookmark (`jj git push -c`), with optional GitHub PR URL detection |
+| **JJ: Git Push (Tracked Bookmarks)** | Plain `jj git push`: push all tracked bookmarks pointing to ancestors of @ |
+| **JJ: Git Fetch** | Fetch from the default remote |
 | **JJ: Pull and Retrunk** | Fetch from default remote and rebase current stack onto trunk (requires revset aliases, see below) |
 
 #### Pull and Retrunk
@@ -196,6 +200,10 @@ These are convenient bindings for the most common operations. Copy whichever you
 - `jj_file_history`
 - `jj_annotate_file`
 - `jj_evolog`
+- `jj_git_push`
+- `jj_git_fetch`
+- `jj_duplicate`
+- `jj_revert`
 - `jj_pull_retrunk`
 - `jj_edit`
 - `jj_log`

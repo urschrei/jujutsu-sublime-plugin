@@ -803,6 +803,35 @@ class JJCli:
         """Fetch from git remote."""
         self.run_async(["git", "fetch"], _make_success_callback(callback))
 
+    def git_push(self, callback):
+        """Push all tracked bookmarks pointing to ancestors of @.
+
+        Callback receives (success, message) where message is jj's summary
+        line on success (e.g. which bookmarks moved) or stderr on failure.
+        """
+
+        def on_result(result):
+            if not result.success:
+                callback(False, result.stderr)
+                return
+            output = (result.stderr or result.stdout).strip()
+            summary = output.split("\n")[0] if output else "Push complete"
+            callback(True, summary)
+
+        self.run_async(["git", "push"], on_result)
+
+    def duplicate(self, callback, revision=None):
+        """Duplicate a change in place (default: the current change)."""
+        args = ["duplicate"]
+        if revision:
+            args.append(revision)
+        self.run_async(args, _make_success_callback(callback))
+
+    def revert(self, revision, callback):
+        """Create a new change on top of @ undoing the given revision."""
+        args = ["revert", "-r", revision, "--onto", "@"]
+        self.run_async(args, _make_success_callback(callback))
+
     def rebase_stack_to_trunk(self, callback):
         """Rebase current stack onto trunk.
 

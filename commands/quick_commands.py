@@ -580,6 +580,64 @@ class JjSquashInteractiveCommand(JjWindowCommand):
         self.show_status("Squash cancelled")
 
 
+class JjDuplicateCommand(JjWindowCommand):
+    """Duplicate the current change in place."""
+
+    def run(self):
+        cli = self.get_cli()
+        if cli is None:
+            return
+
+        def on_result(success, error):
+            if success:
+                self.show_status("Change duplicated")
+                refresh_all_views(self.window)
+            else:
+                self.show_error(f"Failed to duplicate: {error}")
+
+        cli.duplicate(on_result)
+
+
+class JjRevertCommand(JjWindowCommand):
+    """Revert a change: create a new change on top of @ undoing it."""
+
+    def run(self):
+        cli = self.get_cli()
+        if cli is None:
+            return
+
+        self.cli = cli
+
+        def on_log(changes):
+            if not changes:
+                self.show_error("Could not get change log")
+                return
+
+            items = [build_change_quick_panel_item(change) for change in changes]
+
+            def on_select(idx):
+                if idx < 0:
+                    return
+                selected = changes[idx]
+
+                def on_result(success, error):
+                    if success:
+                        self.show_status(
+                            f"Created revert of {selected.change_id} on top of @"
+                        )
+                        refresh_all_views(self.window)
+                    else:
+                        self.show_error(f"Failed to revert: {error}")
+
+                self.cli.revert(selected.change_id, on_result)
+
+            self.window.show_quick_panel(
+                items, on_select, placeholder="Select change to revert"
+            )
+
+        self.cli.get_log(on_log, revset="::", limit=DEFAULT_LOG_LIMIT)
+
+
 class JjAbandonCommand(JjWindowCommand):
     """Abandon current change."""
 
@@ -636,6 +694,46 @@ class JjUndoCommand(JjWindowCommand):
                 self.show_error(f"Failed to undo: {error}")
 
         cli.undo(on_result)
+
+
+class JjGitFetchCommand(JjWindowCommand):
+    """Fetch from the default git remote."""
+
+    def run(self):
+        cli = self.get_cli()
+        if cli is None:
+            return
+
+        self.show_status("Fetching...")
+
+        def on_result(success, error):
+            if success:
+                self.show_status("Fetch complete")
+                refresh_all_views(self.window)
+            else:
+                self.show_error(f"Failed to fetch: {error}")
+
+        cli.git_fetch(on_result)
+
+
+class JjGitPushCommand(JjWindowCommand):
+    """Push all tracked bookmarks pointing to ancestors of @."""
+
+    def run(self):
+        cli = self.get_cli()
+        if cli is None:
+            return
+
+        self.show_status("Pushing...")
+
+        def on_result(success, message):
+            if success:
+                self.show_status(message)
+                refresh_all_views(self.window)
+            else:
+                self.show_error(f"Failed to push: {message}")
+
+        cli.git_push(on_result)
 
 
 class JjPullRetrunkCommand(JjWindowCommand):
