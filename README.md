@@ -92,6 +92,7 @@ The status bar also flags conflicts: the current change gets a `(conflict)` mark
 | Key | Action |
 |-----|--------|
 | `enter` | Edit (check out) the change |
+| `o` | Show its diff in a scratch view |
 | `n` | Create a new change on top of it |
 | `d` | Set its description |
 | `a` | Abandon it (with confirmation) |

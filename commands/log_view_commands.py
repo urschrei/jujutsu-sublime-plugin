@@ -3,6 +3,7 @@
 import sublime
 import sublime_plugin
 
+from ..views.diff_view import show_diff_view
 from ..views.log_view import (
     get_change_id_for_cursor,
     get_cli_for_log_view,
@@ -22,6 +23,7 @@ HELP_TEXT = """
     </style>
     <h1>JJ Log View</h1>
     <p><code>enter</code> edit change under cursor</p>
+    <p><code>o</code> show diff of change under cursor</p>
     <p><code>n</code> new change on top of change under cursor</p>
     <p><code>d</code> describe change under cursor</p>
     <p><code>a</code> abandon change under cursor</p>
@@ -198,6 +200,28 @@ class JjLogViewAbandonCommand(LogViewTextCommand):
             lambda idx: on_confirm(idx == 0),
             placeholder=f"Abandon {change_id}?",
         )
+
+
+class JjLogViewShowDiffCommand(LogViewTextCommand):
+    """Show the diff of the change under the cursor in a scratch view."""
+
+    def run(self, edit):
+        cli, change_id = self.get_target()
+        if cli is None or change_id is None:
+            return
+
+        window = self.view.window()
+        if window is None:
+            return
+
+        def on_diff(success, text_or_error):
+            if not success:
+                self.show_error(f"Failed to get diff: {text_or_error}")
+                return
+            content = text_or_error.strip() or "(no changes in this revision)"
+            show_diff_view(window, f"JJ Diff: {change_id}", content + "\n")
+
+        cli.get_diff_raw(on_diff, revision=change_id)
 
 
 class JjLogViewHelpCommand(LogViewTextCommand):

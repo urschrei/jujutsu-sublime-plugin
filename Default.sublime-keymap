@@ -60,6 +60,11 @@
         "context": [{"key": "jj_log_view", "operand": true}]
     },
     {
+        "keys": ["o"],
+        "command": "jj_log_view_show_diff",
+        "context": [{"key": "jj_log_view", "operand": true}]
+    },
+    {
         "keys": ["n"],
         "command": "jj_log_view_new",
         "context": [{"key": "jj_log_view", "operand": true}]

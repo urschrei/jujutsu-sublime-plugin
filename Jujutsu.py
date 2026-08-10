@@ -20,6 +20,7 @@ from .commands.log_view_commands import (  # noqa: F401
     JjLogViewNewCommand,
     JjLogViewRefreshCommand,
     JjLogViewReplaceCommand,
+    JjLogViewShowDiffCommand,
 )
 from .commands.oplog_commands import JjOpLogCommand  # noqa: F401
 from .commands.quick_commands import (  # noqa: F401

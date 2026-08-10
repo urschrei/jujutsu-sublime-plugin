@@ -368,3 +368,30 @@ class TestGetLogGraph:
         assert "-r" in self.captured_args
         r_index = self.captured_args.index("-r")
         assert self.captured_args[r_index + 1] == "mutable()"
+
+
+class TestGetDiffRawPaths:
+    """Tests for path restriction on raw diffs."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.cli = JJCli("/tmp/fake-repo")
+        self.captured_args = None
+
+        def capture_run_async(args, callback, **kwargs):
+            self.captured_args = args
+
+        self.cli.run_async = capture_run_async
+
+    def test_without_paths(self):
+        """Without paths, no separator is appended."""
+        self.cli.get_diff_raw(callback=lambda *args: None, revision="abc123")
+        assert "--" not in self.captured_args
+        assert self.captured_args[:3] == ["diff", "-r", "abc123"]
+
+    def test_with_paths(self):
+        """Paths are appended after a -- separator."""
+        self.cli.get_diff_raw(
+            callback=lambda *args: None, revision="abc123", paths=["a.txt"]
+        )
+        assert self.captured_args[-2:] == ["--", "a.txt"]
