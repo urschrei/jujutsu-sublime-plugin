@@ -569,3 +569,45 @@ class TestParallelize:
         """All selected revisions are passed positionally."""
         self.cli.parallelize(["abc123", "def456"], callback=lambda *args: None)
         assert self.captured_args == ["parallelize", "abc123", "def456"]
+
+
+class TestRunInRevision:
+    """Tests for run_in_revision argument building."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.cli = JJCli("/tmp/fake-repo")
+        self.captured_args = None
+        self.captured_timeout = None
+
+        def capture_run_async(args, callback, **kwargs):
+            self.captured_args = args
+            self.captured_timeout = kwargs.get("timeout")
+
+        self.cli.run_async = capture_run_async
+
+    def test_run_ignores_changes(self):
+        """The command never rewrites commits."""
+        self.cli.run_in_revision(
+            ["sh", "-c", "pytest"], "abc123", callback=lambda *args: None
+        )
+        assert self.captured_args == [
+            "run",
+            "--ignore-changes",
+            "-r",
+            "abc123",
+            "--",
+            "sh",
+            "-c",
+            "pytest",
+        ]
+
+    def test_timeout_is_forwarded(self):
+        """A custom timeout reaches run_async."""
+        self.cli.run_in_revision(
+            ["sh", "-c", "pytest"],
+            "abc123",
+            callback=lambda *args: None,
+            timeout=120,
+        )
+        assert self.captured_timeout == 120

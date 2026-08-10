@@ -52,6 +52,10 @@ All commands are available via the command palette (Ctrl+Shift+P / Cmd+Shift+P) 
 | **JJ: Operation Log (Restore)...** | Browse the operation log and restore the repository to an earlier operation (safe multi-step undo) |
 | **JJ: Refresh Status** | Refresh status bar |
 
+### Running Commands Across a Stack
+
+"JJ: Run Command on Revset..." runs a shell command once per change in a revset (default configurable via `run_default_revset`). Each change is checked out into a private working copy by `jj run --ignore-changes`, so neither the commits nor your working copy are modified. Results appear in an output panel: a PASS/FAIL line per change, captured output for failures, and a final summary. The per-change timeout is configurable via `run_command_timeout` (default 600 seconds). Requires jj 0.43 or later.
+
 ### Restoring and Discarding Changes
 
 | Command | Description |
@@ -223,6 +227,7 @@ These are convenient bindings for the most common operations. Copy whichever you
 - `jj_fix`
 - `jj_file_search`
 - `jj_parallelize`
+- `jj_run`
 - `jj_pull_retrunk`
 - `jj_edit`
 - `jj_log`

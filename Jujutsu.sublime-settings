@@ -10,5 +10,9 @@
     // Revset for the log view. Set to null to use jj's configured default.
     "log_view_revset": null,
     // Maximum number of changes shown in the log view.
-    "log_view_limit": 200
+    "log_view_limit": 200,
+    // Default revset for "JJ: Run Command on Revset".
+    "run_default_revset": "trunk()..@ | @",
+    // Timeout in seconds for each per-change command run.
+    "run_command_timeout": 600
 }

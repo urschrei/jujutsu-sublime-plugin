@@ -155,3 +155,35 @@ class TestRunSync:
             self.cli._run_sync(["status"])
 
         assert captured_cwd == "/tmp/fake-repo"
+
+
+class TestRunSyncTimeout:
+    """Tests for the timeout parameter on _run_sync."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.cli = JJCli("/tmp/fake-repo")
+
+    def test_default_timeout(self):
+        """Without a timeout, the default is used."""
+        mock_process = MagicMock()
+        mock_process.returncode = 0
+        mock_process.communicate.return_value = (b"", b"")
+
+        with patch("subprocess.Popen", return_value=mock_process):
+            self.cli._run_sync(["status"])
+
+        _, kwargs = mock_process.communicate.call_args
+        assert kwargs["timeout"] == JJCli.DEFAULT_TIMEOUT
+
+    def test_custom_timeout(self):
+        """A custom timeout is passed to communicate."""
+        mock_process = MagicMock()
+        mock_process.returncode = 0
+        mock_process.communicate.return_value = (b"", b"")
+
+        with patch("subprocess.Popen", return_value=mock_process):
+            self.cli._run_sync(["status"], timeout=600)
+
+        _, kwargs = mock_process.communicate.call_args
+        assert kwargs["timeout"] == 600

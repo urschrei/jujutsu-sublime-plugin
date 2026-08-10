@@ -144,6 +144,10 @@
         "command": "jj_parallelize"
     },
     {
+        "caption": "JJ: Run Command on Revset...",
+        "command": "jj_run"
+    },
+    {
         "caption": "JJ: Split Change...",
         "command": "jj_split"
     },

@@ -187,10 +187,14 @@ class JJCli:
         self.repo_root = repo_root
         self.jj_path = jj_path or "jj"
 
-    def _run_sync(self, args, cwd=None, input_text=None):
+    # Default timeout for jj commands, in seconds
+    DEFAULT_TIMEOUT = 30
+
+    def _run_sync(self, args, cwd=None, input_text=None, timeout=None):
         """Run a jj command synchronously."""
         cmd = [self.jj_path] + args
         working_dir = cwd or self.repo_root
+        timeout = timeout or self.DEFAULT_TIMEOUT
 
         try:
             env = os.environ.copy()
@@ -207,7 +211,7 @@ class JJCli:
                 startupinfo=_get_startupinfo(),
             )
             stdout, stderr = process.communicate(
-                input=input_text.encode() if input_text else None, timeout=30
+                input=input_text.encode() if input_text else None, timeout=timeout
             )
             return JJResult(
                 success=process.returncode == 0,
@@ -238,12 +242,12 @@ class JJCli:
                 returncode=-1,
             )
 
-    def run_async(self, args, callback, cwd=None, input_text=None):
+    def run_async(self, args, callback, cwd=None, input_text=None, timeout=None):
         """Run a jj command asynchronously and call callback on main thread."""
         task_generation = _generation
 
         def execute():
-            result = self._run_sync(args, cwd, input_text)
+            result = self._run_sync(args, cwd, input_text, timeout)
             if task_generation == _generation:
                 sublime.set_timeout(lambda: callback(result), 0)
 
@@ -938,6 +942,17 @@ class JJCli:
         """Make the given revisions siblings instead of a linear chain."""
         args = ["parallelize"] + list(revisions)
         self.run_async(args, _make_success_callback(callback))
+
+    def run_in_revision(self, command, revision, callback, timeout=None):
+        """Run a command in a private working copy of a revision.
+
+        Uses jj run --ignore-changes so no commits are rewritten and the
+        real working copy is untouched. The command is a list of
+        arguments. Callback receives the raw JJResult, whose returncode
+        reflects the command's outcome for the revision.
+        """
+        args = ["run", "--ignore-changes", "-r", revision, "--"] + list(command)
+        self.run_async(args, callback, timeout=timeout)
 
     def rebase_stack_to_trunk(self, callback):
         """Rebase current stack onto trunk.
