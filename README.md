@@ -96,6 +96,8 @@ The status bar also flags conflicts: the current change gets a `(conflict)` mark
 | `n` | Create a new change on top of it |
 | `d` | Set its description |
 | `a` | Abandon it (with confirmation) |
+| `s` | Squash it into its parent (with confirmation) |
+| `b` | Set a bookmark on it |
 | `r` | Refresh the view |
 | `?` | Show this key reference |
 | `escape` | Close the view |

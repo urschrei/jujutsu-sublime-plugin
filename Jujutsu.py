@@ -13,6 +13,7 @@ from .commands.conflict_commands import (  # noqa: F401
 )
 from .commands.log_view_commands import (  # noqa: F401
     JjLogViewAbandonCommand,
+    JjLogViewBookmarkCommand,
     JjLogViewCommand,
     JjLogViewDescribeCommand,
     JjLogViewEditCommand,
@@ -21,6 +22,7 @@ from .commands.log_view_commands import (  # noqa: F401
     JjLogViewRefreshCommand,
     JjLogViewReplaceCommand,
     JjLogViewShowDiffCommand,
+    JjLogViewSquashCommand,
 )
 from .commands.oplog_commands import JjOpLogCommand  # noqa: F401
 from .commands.quick_commands import (  # noqa: F401

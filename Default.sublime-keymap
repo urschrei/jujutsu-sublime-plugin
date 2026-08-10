@@ -80,6 +80,16 @@
         "context": [{"key": "jj_log_view", "operand": true}]
     },
     {
+        "keys": ["s"],
+        "command": "jj_log_view_squash",
+        "context": [{"key": "jj_log_view", "operand": true}]
+    },
+    {
+        "keys": ["b"],
+        "command": "jj_log_view_bookmark",
+        "context": [{"key": "jj_log_view", "operand": true}]
+    },
+    {
         "keys": ["r"],
         "command": "jj_log_view_refresh",
         "context": [{"key": "jj_log_view", "operand": true}]

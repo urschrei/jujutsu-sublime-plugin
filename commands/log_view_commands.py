@@ -27,6 +27,8 @@ HELP_TEXT = """
     <p><code>n</code> new change on top of change under cursor</p>
     <p><code>d</code> describe change under cursor</p>
     <p><code>a</code> abandon change under cursor</p>
+    <p><code>s</code> squash change under cursor into its parent</p>
+    <p><code>b</code> set bookmark on change under cursor</p>
     <p><code>r</code> refresh</p>
     <p><code>escape</code> close</p>
 </body>
@@ -199,6 +201,88 @@ class JjLogViewAbandonCommand(LogViewTextCommand):
             ],
             lambda idx: on_confirm(idx == 0),
             placeholder=f"Abandon {change_id}?",
+        )
+
+
+class JjLogViewSquashCommand(LogViewTextCommand):
+    """Squash the change under the cursor into its parent (with confirmation)."""
+
+    def run(self, edit):
+        cli, change_id = self.get_target()
+        if cli is None or change_id is None:
+            return
+
+        window = self.view.window()
+        if window is None:
+            return
+
+        def on_confirm(confirmed):
+            if not confirmed:
+                self.show_status("Squash cancelled")
+                return
+
+            def on_result(success, error):
+                if success:
+                    self.show_status(f"Squashed {change_id} into its parent")
+                    self.refresh()
+                else:
+                    self.show_error(f"Failed to squash: {error}")
+
+            cli.squash_flexible(
+                sources=[change_id],
+                destination=f"{change_id}-",
+                use_dest_message=False,
+                callback=on_result,
+            )
+
+        window.show_quick_panel(
+            [
+                sublime.QuickPanelItem(
+                    trigger=f"Squash {change_id} into its parent",
+                    details="Move its changes into the parent revision",
+                    annotation="undoable via the operation log",
+                    kind=KIND_ACTION,
+                ),
+                sublime.QuickPanelItem(
+                    trigger="Cancel",
+                    details="Keep the change",
+                    kind=KIND_ACTION,
+                ),
+            ],
+            lambda idx: on_confirm(idx == 0),
+            placeholder=f"Squash {change_id} into its parent?",
+        )
+
+
+class JjLogViewBookmarkCommand(LogViewTextCommand):
+    """Set a bookmark on the change under the cursor."""
+
+    def run(self, edit):
+        cli, change_id = self.get_target()
+        if cli is None or change_id is None:
+            return
+
+        window = self.view.window()
+        if window is None:
+            return
+
+        def on_done(name):
+            name = name.strip()
+            if not name:
+                self.show_status("Bookmark cancelled (empty name)")
+                return
+
+            def on_result(success, error):
+                if success:
+                    self.show_status(f"Bookmark {name} set on {change_id}")
+                    self.refresh()
+                else:
+                    self.show_error(f"Failed to set bookmark: {error}")
+
+            cli.bookmark_set(name, change_id, on_result)
+
+        window.show_input_panel(
+            f"Bookmark name for {change_id}:", "", on_done, None, None
         )
 
 
