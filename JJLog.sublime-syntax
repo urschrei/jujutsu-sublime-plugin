@@ -1,0 +1,35 @@
+%YAML 1.2
+---
+# Syntax for the read-only JJ Log view. Not associated with any file
+# extension; assigned programmatically when the view is created.
+name: JJ Log
+scope: text.jj-log
+version: 2
+hidden: true
+file_extensions: []
+
+contexts:
+  main:
+    # Entry header: graph symbols, change id, then description and markers
+    - match: '^([^0-9A-Za-z]*)([k-z]{8})(?=\s{2})'
+      captures:
+        1: punctuation.definition.graph.jj-log
+        2: entity.name.function.change-id.jj-log
+      push: header
+    # Detail line: graph symbols, author email and timestamp
+    - match: '^([^0-9A-Za-z]*)([^\s@]+@\S+\s{2}.*)$'
+      captures:
+        1: punctuation.definition.graph.jj-log
+        2: comment.detail.jj-log
+
+  header:
+    - match: '\(no description set\)'
+      scope: comment.no-description.jj-log
+    - match: '\(empty\)'
+      scope: comment.empty.jj-log
+    - match: '\(conflict\)'
+      scope: invalid.illegal.conflict.jj-log
+    - match: '\[[^\[\]]+\]\s*$'
+      scope: string.other.bookmark.jj-log
+    - match: '$'
+      pop: true

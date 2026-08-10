@@ -102,7 +102,7 @@ The status bar also flags conflicts: the current change gets a `(conflict)` mark
 | `?` | Show this key reference |
 | `escape` | Close the view |
 
-The view refreshes automatically after each operation. Conflicted entries are outlined.
+The view refreshes automatically after each operation. Entries are syntax highlighted: change ids, bookmarks, conflict and empty markers, and author lines each pick up theme colours.
 
 ### Bookmark Management
 

@@ -60,6 +60,7 @@ def open_log_view(window, repo_root):
         settings.set("draw_white_space", "none")
         settings.set("caret_style", "solid")
         settings.set("command_mode", False)
+        _assign_log_syntax(view)
         view.set_read_only(True)
     window.focus_view(view)
     render_log_view(view)
@@ -91,9 +92,21 @@ def render_log_view(view):
         view.set_read_only(True)
         sublime.set_timeout(lambda: view.set_viewport_position(viewport, False), 0)
 
-        _highlight_conflicts(view)
-
     cli.get_log_graph(on_graph, revset=revset, limit=limit)
+
+
+def _assign_log_syntax(view):
+    """Assign the bundled JJ Log syntax to the view.
+
+    The package name is derived from this module's import path so the
+    syntax resolves regardless of the installed package directory name.
+    """
+    package = __name__.split(".")[0]
+    try:
+        view.assign_syntax(f"Packages/{package}/JJLog.sublime-syntax")
+    except Exception:
+        # Fall back to plain text if the syntax cannot be resolved
+        pass
 
 
 def get_change_id_for_cursor(view):
@@ -108,17 +121,3 @@ def get_change_id_for_cursor(view):
     if row >= len(line_map):
         return None
     return line_map[row]
-
-
-def _highlight_conflicts(view):
-    """Mark (conflict) annotations in the rendered log."""
-    regions = view.find_all(r"\(conflict\)")
-    if regions:
-        view.add_regions(
-            "jj_log_conflicts",
-            regions,
-            scope="region.redish",
-            flags=sublime.DRAW_NO_FILL,
-        )
-    else:
-        view.erase_regions("jj_log_conflicts")
