@@ -73,6 +73,11 @@ from .commands.split_command import (  # noqa: F401
     JjSplitSelectAllCommand,
     JjSplitToggleCommand,
 )
+from .commands.tag_commands import (  # noqa: F401
+    JjTagDeleteCommand,
+    JjTagListCommand,
+    JjTagSetCommand,
+)
 from .core.jj_cli import init_executor, shutdown_executor
 from .listeners.file_events import JjEventListener  # noqa: F401
 from .listeners.log_view_events import (  # noqa: F401

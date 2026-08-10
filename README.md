@@ -119,6 +119,16 @@ The view refreshes automatically after each operation. Entries are syntax highli
 | **JJ: Bookmark Rename** | Rename a bookmark |
 | **JJ: Bookmark List** | List all bookmarks; selecting one navigates to that revision |
 
+### Tag Management
+
+Requires jj 0.44 or later (tags are tracked like bookmarks).
+
+| Command | Description |
+|---------|-------------|
+| **JJ: Tag List** | List all tags; selecting one navigates to that revision |
+| **JJ: Tag Set** | Create or update a tag on a revision |
+| **JJ: Tag Delete** | Delete one or more tags (multi-select supported) |
+
 ### Git Integration
 
 | Command | Description |
@@ -204,6 +214,9 @@ These are convenient bindings for the most common operations. Copy whichever you
 - `jj_git_fetch`
 - `jj_duplicate`
 - `jj_revert`
+- `jj_tag_list`
+- `jj_tag_set`
+- `jj_tag_delete`
 - `jj_pull_retrunk`
 - `jj_edit`
 - `jj_log`

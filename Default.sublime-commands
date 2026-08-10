@@ -100,6 +100,18 @@
         "command": "jj_bookmark_list"
     },
     {
+        "caption": "JJ: Tag List",
+        "command": "jj_tag_list"
+    },
+    {
+        "caption": "JJ: Tag Set",
+        "command": "jj_tag_set"
+    },
+    {
+        "caption": "JJ: Tag Delete",
+        "command": "jj_tag_delete"
+    },
+    {
         "caption": "JJ: Git Push (Create Bookmark)",
         "command": "jj_git_push_change"
     },

@@ -730,29 +730,51 @@ class JJCli:
         'if(normal_target, normal_target.description().first_line(), "") ++ "\\n"'
     )
 
+    def _parse_ref_list(self, output):
+        """Parse bookmark/tag list template output into BookmarkInfo objects."""
+        refs = []
+        for line in output.strip().split("\n"):
+            if line:
+                parts = line.split(self.FIELD_SEP)
+                if len(parts) >= 3:
+                    refs.append(
+                        BookmarkInfo(
+                            name=parts[0],
+                            change_id=parts[1],
+                            description=parts[2] or "(no description)",
+                        )
+                    )
+        return refs
+
     def bookmark_list(self, callback):
         """Get list of bookmarks with their targets."""
 
         def on_result(result):
-            if not result.success:
-                callback([])
-                return
-
-            bookmarks = []
-            for line in result.stdout.strip().split("\n"):
-                if line:
-                    parts = line.split(self.FIELD_SEP)
-                    if len(parts) >= 3:
-                        bookmarks.append(
-                            BookmarkInfo(
-                                name=parts[0],
-                                change_id=parts[1],
-                                description=parts[2] or "(no description)",
-                            )
-                        )
-            callback(bookmarks)
+            callback(self._parse_ref_list(result.stdout) if result.success else [])
 
         self.run_async(["bookmark", "list", "-T", self.BOOKMARK_TEMPLATE], on_result)
+
+    def tag_list(self, callback):
+        """Get list of tags with their targets.
+
+        Tags share the bookmark template keywords, so entries are returned
+        as BookmarkInfo objects.
+        """
+
+        def on_result(result):
+            callback(self._parse_ref_list(result.stdout) if result.success else [])
+
+        self.run_async(["tag", "list", "-T", self.BOOKMARK_TEMPLATE], on_result)
+
+    def tag_set(self, name, revision, callback):
+        """Create or update a tag (with --allow-move)."""
+        args = ["tag", "set", name, "-r", revision, "--allow-move"]
+        self.run_async(args, _make_success_callback(callback))
+
+    def tag_delete(self, names, callback):
+        """Delete one or more tags."""
+        args = ["tag", "delete"] + list(names)
+        self.run_async(args, _make_success_callback(callback))
 
     def bookmark_set(self, name, revision, callback):
         """Create or update a bookmark (with --allow-backwards)."""

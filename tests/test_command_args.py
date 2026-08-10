@@ -465,3 +465,40 @@ class TestOneLiners:
         """Revert applies the reverse of a revision on top of @."""
         self.cli.revert("abc123", callback=lambda *args: None)
         assert self.captured_args == ["revert", "-r", "abc123", "--onto", "@"]
+
+
+class TestTags:
+    """Tests for tag argument building."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.cli = JJCli("/tmp/fake-repo")
+        self.captured_args = None
+
+        def capture_run_async(args, callback, **kwargs):
+            self.captured_args = args
+
+        self.cli.run_async = capture_run_async
+
+    def test_tag_list_args(self):
+        """Tag list uses the shared ref template."""
+        self.cli.tag_list(callback=lambda *args: None)
+        assert self.captured_args[:2] == ["tag", "list"]
+        assert "-T" in self.captured_args
+
+    def test_tag_set_args(self):
+        """Tag set allows moving existing tags."""
+        self.cli.tag_set("v1.0.0", "abc123", callback=lambda *args: None)
+        assert self.captured_args == [
+            "tag",
+            "set",
+            "v1.0.0",
+            "-r",
+            "abc123",
+            "--allow-move",
+        ]
+
+    def test_tag_delete_args(self):
+        """Tag delete passes all names."""
+        self.cli.tag_delete(["v1", "v2"], callback=lambda *args: None)
+        assert self.captured_args == ["tag", "delete", "v1", "v2"]
