@@ -140,6 +140,10 @@
         "command": "jj_revert"
     },
     {
+        "caption": "JJ: Parallelize Changes...",
+        "command": "jj_parallelize"
+    },
+    {
         "caption": "JJ: Split Change...",
         "command": "jj_split"
     },

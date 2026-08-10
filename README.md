@@ -48,6 +48,7 @@ All commands are available via the command palette (Ctrl+Shift+P / Cmd+Shift+P) 
 | **JJ: Fix (Run Formatters)** | Run configured formatters (`fix.tools`) over the mutable stack; only modified lines are formatted |
 | **JJ: Duplicate Change** | Duplicate the current change in place |
 | **JJ: Revert Change...** | Select a change; a new change undoing it is created on top of @ |
+| **JJ: Parallelize Changes...** | Select two or more changes in a chain and make them siblings |
 | **JJ: Operation Log (Restore)...** | Browse the operation log and restore the repository to an earlier operation (safe multi-step undo) |
 | **JJ: Refresh Status** | Refresh status bar |
 
@@ -221,6 +222,7 @@ These are convenient bindings for the most common operations. Copy whichever you
 - `jj_tag_delete`
 - `jj_fix`
 - `jj_file_search`
+- `jj_parallelize`
 - `jj_pull_retrunk`
 - `jj_edit`
 - `jj_log`

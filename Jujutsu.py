@@ -50,6 +50,7 @@ from .commands.quick_commands import (  # noqa: F401
     JjGitPushCommand,
     JjLogCommand,
     JjNewCommand,
+    JjParallelizeCommand,
     JjPullRetrunkCommand,
     JjQuickSquashCommand,
     JjRebaseCommand,

@@ -550,3 +550,22 @@ class TestGitPushAllowConflicts:
         """The flag is appended when requested."""
         self.cli.git_push(callback=lambda *args: None, allow_conflicts=True)
         assert self.captured_args == ["git", "push", "--allow-conflicts"]
+
+
+class TestParallelize:
+    """Tests for parallelize argument building."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.cli = JJCli("/tmp/fake-repo")
+        self.captured_args = None
+
+        def capture_run_async(args, callback, **kwargs):
+            self.captured_args = args
+
+        self.cli.run_async = capture_run_async
+
+    def test_parallelize_args(self):
+        """All selected revisions are passed positionally."""
+        self.cli.parallelize(["abc123", "def456"], callback=lambda *args: None)
+        assert self.captured_args == ["parallelize", "abc123", "def456"]

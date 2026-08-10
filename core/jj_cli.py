@@ -934,6 +934,11 @@ class JJCli:
         args = ["revert", "-r", revision, "--onto", "@"]
         self.run_async(args, _make_success_callback(callback))
 
+    def parallelize(self, revisions, callback):
+        """Make the given revisions siblings instead of a linear chain."""
+        args = ["parallelize"] + list(revisions)
+        self.run_async(args, _make_success_callback(callback))
+
     def rebase_stack_to_trunk(self, callback):
         """Rebase current stack onto trunk.
 

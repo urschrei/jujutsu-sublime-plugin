@@ -662,6 +662,102 @@ class JjRevertCommand(JjWindowCommand):
         self.cli.get_log(on_log, revset="::", limit=DEFAULT_LOG_LIMIT)
 
 
+class JjParallelizeCommand(JjWindowCommand):
+    """Make selected changes siblings instead of a linear chain."""
+
+    def run(self):
+        cli = self.get_cli()
+        if cli is None:
+            return
+
+        self.cli = cli
+        self.selected_changes = set()
+        self._load_changes()
+
+    def _load_changes(self):
+        """Load mutable changes and show the selection picker."""
+
+        def on_log(changes):
+            if not changes:
+                self.show_error("Could not get change log")
+                return
+
+            self.all_changes = changes
+            self._show_change_picker()
+
+        self.cli.get_log(on_log, revset="mutable()", limit=DEFAULT_LOG_LIMIT)
+
+    def _show_change_picker(self, restore_index=0):
+        """Show change picker with multi-select support."""
+        items = []
+
+        has_confirm_option = len(self.selected_changes) >= 2
+        if has_confirm_option:
+            items.append(
+                sublime.QuickPanelItem(
+                    trigger=f"Parallelize {len(self.selected_changes)} change(s)",
+                    details="Make the selected changes siblings",
+                    kind=KIND_ACTION,
+                )
+            )
+
+        for change in self.all_changes:
+            is_selected = change.change_id in self.selected_changes
+            extra = ["selected"] if is_selected else None
+            annotations = (extra or []) + build_change_annotations(change)
+
+            details = format_change_details(change)
+            if is_selected:
+                details = f"<b>{details}</b>"
+
+            items.append(
+                sublime.QuickPanelItem(
+                    trigger=change.change_id,
+                    details=details,
+                    annotation=" | ".join(annotations) if annotations else "",
+                    kind=KIND_WORKING_COPY if change.is_working_copy else KIND_CHANGE,
+                )
+            )
+
+        def on_select(idx):
+            if idx < 0:
+                return
+
+            offset = 1 if has_confirm_option else 0
+
+            if has_confirm_option and idx == 0:
+                self._parallelize_selected()
+                return
+
+            change = self.all_changes[idx - offset]
+            if change.change_id in self.selected_changes:
+                self.selected_changes.remove(change.change_id)
+            else:
+                self.selected_changes.add(change.change_id)
+
+            self._show_change_picker(restore_index=idx)
+
+        self.window.show_quick_panel(
+            items,
+            on_select,
+            selected_index=restore_index,
+            placeholder="Toggle changes to parallelize (2 or more), then confirm",
+        )
+
+    def _parallelize_selected(self):
+        """Run parallelize on the selected changes."""
+        ids = sorted(self.selected_changes)
+
+        def on_result(success, error):
+            if success:
+                self.show_status(f"Parallelized {len(ids)} change(s)")
+                refresh_all_views(self.window)
+            else:
+                self.show_error(f"Failed to parallelize: {error}")
+
+        self.cli.parallelize(ids, on_result)
+
+
 class JjAbandonCommand(JjWindowCommand):
     """Abandon current change."""
 
