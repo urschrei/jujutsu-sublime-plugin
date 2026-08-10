@@ -63,7 +63,7 @@ class JjSplitCommand(JjWindowCommand):
             if success:
                 self.show_status("Change split successfully")
                 # Refresh all views to update status bars
-                from .quick_commands import refresh_all_views
+                from .helpers import refresh_all_views
 
                 refresh_all_views(self.window)
             else:

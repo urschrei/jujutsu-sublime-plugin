@@ -162,11 +162,9 @@ class TestSquashFlexible:
         """Set up test fixtures."""
         self.cli = JJCli("/tmp/fake-repo")
 
-    def test_single_source_builds_from_flag(self):
-        ...
+    def test_single_source_builds_from_flag(self): ...
 
-    def test_multiple_sources_builds_multiple_from_flags(self):
-        ...
+    def test_multiple_sources_builds_multiple_from_flags(self): ...
 ```
 
 ### Mocking Strategies
@@ -276,6 +274,7 @@ Consider:
 def test_parse_malformed_line_returns_none(self):
     info = self.cli._parse_change_info("not enough fields")
     assert info is None
+
 
 def test_unicode_output_decoded(self):
     mock_process.communicate.return_value = (

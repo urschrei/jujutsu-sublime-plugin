@@ -9,13 +9,18 @@ This document captures lessons learned while developing the Jujutsu plugin. It s
 ```python
 # Modern Python 3.8+ syntax (now allowed)
 f"Hello {name}"
+
+
 @dataclass
 class Foo:
     pass
 
+
 # No longer needed
 "Hello {0}".format(name)  # Use f-strings instead
-class Foo(object):        # Remove explicit object inheritance
+
+
+class Foo(object):  # Remove explicit object inheritance
     pass
 ```
 
@@ -65,6 +70,8 @@ Sublime Text converts CamelCase class names to snake_case command names:
 ```python
 class MyCommandName(sublime_plugin.WindowCommand):
     pass
+
+
 # Becomes: my_command_name
 ```
 
@@ -73,11 +80,16 @@ class MyCommandName(sublime_plugin.WindowCommand):
 ```python
 class JJShowGraph(sublime_plugin.WindowCommand):
     pass
+
+
 # Becomes: j_j_show_graph  (NOT jj_show_graph!)
+
 
 # Solution: Use single capital
 class JjShowGraph(sublime_plugin.WindowCommand):
     pass
+
+
 # Becomes: jj_show_graph
 ```
 
@@ -165,6 +177,7 @@ class MyEventListener(sublime_plugin.EventListener):
 ```python
 import threading
 import sublime
+
 
 def run_async(callback):
     def execute():
@@ -279,18 +292,21 @@ _phantom_sets[view.id()] = phantom_set
 def on_done(text):
     print("User entered:", text)
 
+
 def on_change(text):
     pass  # Optional: called on each keystroke
+
 
 def on_cancel():
     pass  # Optional: called if user presses Escape
 
+
 window.show_input_panel(
-    "Prompt:",           # Caption
-    "initial value",     # Initial text
+    "Prompt:",  # Caption
+    "initial value",  # Initial text
     on_done,
     on_change,
-    on_cancel
+    on_cancel,
 )
 ```
 
@@ -302,10 +318,12 @@ items = [
     ["Second Item", "Description of second"],
 ]
 
+
 def on_select(index):
     if index < 0:
         return  # User cancelled
     print("Selected:", items[index])
+
 
 window.show_quick_panel(items, on_select)
 ```
@@ -349,11 +367,12 @@ position: absolute
 
 ```python
 def escape_html(text):
-    return (text
-            .replace("&", "&amp;")
-            .replace("<", "&lt;")
-            .replace(">", "&gt;")
-            .replace('"', "&quot;"))
+    return (
+        text.replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace('"', "&quot;")
+    )
 ```
 
 ## Regions and Gutter Icons
@@ -361,11 +380,11 @@ def escape_html(text):
 ```python
 # Add regions with gutter icons
 view.add_regions(
-    "my_regions",                    # Key (for later removal)
-    [region1, region2],              # List of sublime.Region
-    "markup.inserted.diff",          # Scope for colouring
-    "dot",                           # Icon: "dot", "circle", "bookmark", or custom
-    sublime.HIDDEN,                  # Flags
+    "my_regions",  # Key (for later removal)
+    [region1, region2],  # List of sublime.Region
+    "markup.inserted.diff",  # Scope for colouring
+    "dot",  # Icon: "dot", "circle", "bookmark", or custom
+    sublime.HIDDEN,  # Flags
 )
 
 # Remove regions
@@ -399,6 +418,7 @@ sublime.status_message("Brief status update")  # Shows in status bar
 def plugin_loaded():
     """Called once when plugin is fully loaded."""
     pass
+
 
 def plugin_unloaded():
     """Called when plugin is about to be unloaded."""
@@ -435,6 +455,7 @@ def get_project_root(view):
 ```python
 _pending_updates = {}
 
+
 def debounced_update(view, delay=0.5):
     view_id = view.id()
 
@@ -457,6 +478,7 @@ def debounced_update(view, delay=0.5):
 ```python
 import subprocess
 import os
+
 
 def run_command(cmd, cwd=None):
     env = os.environ.copy()
