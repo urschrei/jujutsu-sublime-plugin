@@ -741,23 +741,68 @@ class JjGitFetchCommand(JjWindowCommand):
 
 
 class JjGitPushCommand(JjWindowCommand):
-    """Push all tracked bookmarks pointing to ancestors of @."""
+    """Push all tracked bookmarks pointing to ancestors of @.
+
+    If the push is refused because of unresolved conflicts, offers a
+    confirmed retry with --allow-conflicts (jj 0.44 or later).
+    """
 
     def run(self):
         cli = self.get_cli()
         if cli is None:
             return
 
+        self.cli = cli
         self.show_status("Pushing...")
 
         def on_result(success, message):
             if success:
                 self.show_status(message)
                 refresh_all_views(self.window)
+            elif "conflict" in message.lower():
+                self._offer_conflict_retry(message)
             else:
                 self.show_error(f"Failed to push: {message}")
 
         cli.git_push(on_result)
+
+    def _offer_conflict_retry(self, error):
+        """Offer to retry the push with --allow-conflicts."""
+
+        def on_confirm(confirmed):
+            if not confirmed:
+                self.show_status("Push cancelled")
+                return
+
+            self.show_status("Pushing with --allow-conflicts...")
+
+            def on_result(success, message):
+                if success:
+                    self.show_status(message)
+                    refresh_all_views(self.window)
+                else:
+                    self.show_error(f"Failed to push: {message}")
+
+            self.cli.git_push(on_result, allow_conflicts=True)
+
+        first_line = error.strip().split("\n")[0]
+        self.window.show_quick_panel(
+            [
+                sublime.QuickPanelItem(
+                    trigger="Push with --allow-conflicts",
+                    details="Push the commits even though they contain conflicts",
+                    annotation=first_line,
+                    kind=KIND_ACTION,
+                ),
+                sublime.QuickPanelItem(
+                    trigger="Cancel",
+                    details="Resolve the conflicts first",
+                    kind=KIND_ACTION,
+                ),
+            ],
+            lambda idx: on_confirm(idx == 0),
+            placeholder="Push was refused due to conflicts. Push anyway?",
+        )
 
 
 class JjPullRetrunkCommand(JjWindowCommand):

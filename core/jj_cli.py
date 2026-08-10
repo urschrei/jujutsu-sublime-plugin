@@ -858,11 +858,13 @@ class JJCli:
         """Fetch from git remote."""
         self.run_async(["git", "fetch"], _make_success_callback(callback))
 
-    def git_push(self, callback):
+    def git_push(self, callback, allow_conflicts=False):
         """Push all tracked bookmarks pointing to ancestors of @.
 
         Callback receives (success, message) where message is jj's summary
         line on success (e.g. which bookmarks moved) or stderr on failure.
+        With allow_conflicts, commits with unresolved conflicts may be
+        pushed (jj 0.44 or later).
         """
 
         def on_result(result):
@@ -873,7 +875,10 @@ class JJCli:
             summary = output.split("\n")[0] if output else "Push complete"
             callback(True, summary)
 
-        self.run_async(["git", "push"], on_result)
+        args = ["git", "push"]
+        if allow_conflicts:
+            args.append("--allow-conflicts")
+        self.run_async(args, on_result)
 
     def duplicate(self, callback, revision=None):
         """Duplicate a change in place (default: the current change)."""

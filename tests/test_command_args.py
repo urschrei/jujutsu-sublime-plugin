@@ -526,3 +526,27 @@ class TestFix:
         """An explicit source is passed via -s."""
         self.cli.fix(callback=lambda *args: None, source="abc123")
         assert self.captured_args == ["fix", "-s", "abc123"]
+
+
+class TestGitPushAllowConflicts:
+    """Tests for the allow-conflicts push flag."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.cli = JJCli("/tmp/fake-repo")
+        self.captured_args = None
+
+        def capture_run_async(args, callback, **kwargs):
+            self.captured_args = args
+
+        self.cli.run_async = capture_run_async
+
+    def test_default_push_omits_flag(self):
+        """Default push does not allow conflicts."""
+        self.cli.git_push(callback=lambda *args: None)
+        assert self.captured_args == ["git", "push"]
+
+    def test_allow_conflicts_flag(self):
+        """The flag is appended when requested."""
+        self.cli.git_push(callback=lambda *args: None, allow_conflicts=True)
+        assert self.captured_args == ["git", "push", "--allow-conflicts"]
