@@ -94,6 +94,63 @@ class JjAnnotateFileCommand(JjWindowCommand):
         cli.annotate_file(rel_path, on_annotate)
 
 
+class JjFileSearchCommand(JjWindowCommand):
+    """Search file contents with jj file search; jump to matches."""
+
+    def run(self):
+        cli = self.get_cli()
+        repo_root = self.get_repo_root()
+        if cli is None or repo_root is None:
+            return
+
+        self.cli = cli
+        self.repo_root = repo_root
+
+        self.window.show_input_panel(
+            "Search pattern (regex):", "", self._on_pattern, None, None
+        )
+
+    def _on_pattern(self, pattern):
+        if not pattern.strip():
+            return
+
+        def on_matches(success, matches_or_error):
+            if not success:
+                self.show_error(f"Search failed: {matches_or_error}")
+                return
+
+            matches = matches_or_error
+            if not matches:
+                self.show_status("No matches")
+                return
+
+            items = [
+                sublime.QuickPanelItem(
+                    trigger=f"{m.path}:{m.line}",
+                    details=m.text,
+                    kind=KIND_CHANGE,
+                )
+                for m in matches
+            ]
+
+            def on_select(idx):
+                if idx < 0:
+                    return
+                selected = matches[idx]
+                abs_path = os.path.join(self.repo_root, selected.path)
+                self.window.open_file(
+                    f"{abs_path}:{selected.line}:1", sublime.ENCODED_POSITION
+                )
+
+            self.window.show_quick_panel(
+                items,
+                on_select,
+                placeholder=f"{len(matches)} match(es)",
+            )
+
+        self.cli.file_search(pattern.strip(), on_matches)
+
+
 class JjEvologCommand(JjWindowCommand):
     """Show how the current change has evolved (its past versions).
 

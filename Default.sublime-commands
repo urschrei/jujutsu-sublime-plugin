@@ -76,6 +76,10 @@
         "command": "jj_annotate_file"
     },
     {
+        "caption": "JJ: File Search...",
+        "command": "jj_file_search"
+    },
+    {
         "caption": "JJ: Evolog (Change Evolution)...",
         "command": "jj_evolog"
     },

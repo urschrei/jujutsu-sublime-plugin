@@ -80,6 +80,7 @@ Both operations are recorded in the operation log, so they can be undone with "J
 | **JJ: File History...** | List the changes that touched the current file; selecting one shows its diff for that file |
 | **JJ: Annotate File** | Show the current file with per-line change annotations (`jj file annotate`) |
 | **JJ: Evolog (Change Evolution)...** | Browse past versions of the current change; selecting one shows its diff |
+| **JJ: File Search...** | Search file contents with a regex (`jj file search`); selecting a match jumps to it |
 | **JJ: Rebase...** | Rebase with full control over source mode (-r/-s/-b) and destination mode (-d/-A/-B) |
 
 ### Conflicts
@@ -218,6 +219,8 @@ These are convenient bindings for the most common operations. Copy whichever you
 - `jj_tag_list`
 - `jj_tag_set`
 - `jj_tag_delete`
+- `jj_fix`
+- `jj_file_search`
 - `jj_pull_retrunk`
 - `jj_edit`
 - `jj_log`

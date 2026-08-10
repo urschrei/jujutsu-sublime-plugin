@@ -87,6 +87,15 @@ class EvologEntry:
 
 
 @dataclass
+class FileMatch:
+    """A search match from jj file search."""
+
+    path: str
+    line: int
+    text: str
+
+
+@dataclass
 class ConflictedFile:
     """A conflicted file as reported by jj resolve --list."""
 
@@ -316,6 +325,39 @@ class JJCli:
         'commit.committer().timestamp().format("%Y-%m-%d") ++ "  " ++ '
         'pad_start(4, line_number) ++ ": " ++ content'
     )
+
+    # Matches jj file search -n output: path:line:content
+    FILE_SEARCH_RE = re.compile(r"^(?P<path>.+?):(?P<line>\d+):(?P<text>.*)$")
+
+    def file_search(self, pattern, callback):
+        """Search file contents in the working copy (jj file search).
+
+        The pattern is a regular expression. Callback receives
+        (success, matches_or_error) where matches is a list of FileMatch.
+        Requires jj 0.44 or later for line numbers.
+        """
+
+        def on_result(result):
+            if not result.success:
+                callback(False, result.stderr)
+                return
+
+            matches = []
+            for line in result.stdout.splitlines():
+                match = self.FILE_SEARCH_RE.match(line)
+                if match:
+                    matches.append(
+                        FileMatch(
+                            path=match.group("path"),
+                            line=int(match.group("line")),
+                            text=match.group("text").strip(),
+                        )
+                    )
+            callback(True, matches)
+
+        self.run_async(
+            ["file", "search", "--pattern", pattern, "--line-number"], on_result
+        )
 
     def annotate_file(self, path, callback):
         """Annotate a file with the change that last modified each line.

@@ -15,6 +15,7 @@ from .commands.file_commands import (  # noqa: F401
     JjAnnotateFileCommand,
     JjEvologCommand,
     JjFileHistoryCommand,
+    JjFileSearchCommand,
 )
 from .commands.log_view_commands import (  # noqa: F401
     JjLogViewAbandonCommand,

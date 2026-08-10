@@ -372,3 +372,58 @@ class TestEvologParsing(TestCase):
         self.cli.get_evolog(collected.extend)
 
         self.assertEqual(collected, [])
+
+
+class TestFileSearchParsing(TestCase):
+    """Test parsing of jj file search output."""
+
+    def setUp(self):
+        """Create a CLI instance for testing."""
+        self.cli = JJCli("/tmp/fake-repo")
+
+    def _search(self, stdout, success=True, stderr=""):
+        collected = {}
+
+        def capture_run_async(args, callback, **kwargs):
+            from core.jj_cli import JJResult
+
+            callback(
+                JJResult(
+                    success=success,
+                    stdout=stdout,
+                    stderr=stderr,
+                    returncode=0 if success else 1,
+                )
+            )
+
+        self.cli.run_async = capture_run_async
+        self.cli.file_search(
+            "pattern", lambda ok, payload: collected.update(ok=ok, payload=payload)
+        )
+        return collected
+
+    def test_parse_matches(self):
+        """Matches are parsed into path, line, and text."""
+        result = self._search("core/cache.py:7:class TTLCache:\nsrc/a.py:12:  x = 1\n")
+
+        self.assertTrue(result["ok"])
+        matches = result["payload"]
+        self.assertEqual(len(matches), 2)
+        self.assertEqual(matches[0].path, "core/cache.py")
+        self.assertEqual(matches[0].line, 7)
+        self.assertEqual(matches[0].text, "class TTLCache:")
+        self.assertEqual(matches[1].line, 12)
+
+    def test_failure_passes_error(self):
+        """A failed search passes the error through."""
+        result = self._search("", success=False, stderr="bad regex")
+
+        self.assertFalse(result["ok"])
+        self.assertEqual(result["payload"], "bad regex")
+
+    def test_empty_output_yields_no_matches(self):
+        """No output means no matches."""
+        result = self._search("")
+
+        self.assertTrue(result["ok"])
+        self.assertEqual(result["payload"], [])
