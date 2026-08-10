@@ -306,3 +306,65 @@ class TestRestore:
             ["restore", "--interactive"],
             True,
         )
+
+
+class TestNewAndAbandonRevisions:
+    """Tests for revision arguments on new and abandon."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.cli = JJCli("/tmp/fake-repo")
+        self.captured_args = None
+
+        def capture_run_async(args, callback, **kwargs):
+            self.captured_args = args
+
+        self.cli.run_async = capture_run_async
+
+    def test_new_without_revision(self):
+        """Default new creates a child of the working copy."""
+        self.cli.new(callback=lambda *args: None)
+        assert self.captured_args == ["new"]
+
+    def test_new_with_revision_and_message(self):
+        """New with a revision creates a child of that revision."""
+        self.cli.new(callback=lambda *args: None, message="msg", revision="abc123")
+        assert self.captured_args == ["new", "abc123", "-m", "msg"]
+
+    def test_abandon_without_revision(self):
+        """Default abandon targets the working copy."""
+        self.cli.abandon(callback=lambda *args: None)
+        assert self.captured_args == ["abandon"]
+
+    def test_abandon_with_revision(self):
+        """Abandon with a revision targets that revision."""
+        self.cli.abandon(callback=lambda *args: None, revision="abc123")
+        assert self.captured_args == ["abandon", "abc123"]
+
+
+class TestGetLogGraph:
+    """Tests for log graph argument building."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.cli = JJCli("/tmp/fake-repo")
+        self.captured_args = None
+
+        def capture_run_async(args, callback, **kwargs):
+            self.captured_args = args
+
+        self.cli.run_async = capture_run_async
+
+    def test_default_revset_omits_r_flag(self):
+        """Without a revset, jj's configured default is used."""
+        self.cli.get_log_graph(callback=lambda *args: None)
+        assert self.captured_args[0] == "log"
+        assert "-r" not in self.captured_args
+        assert "-n" in self.captured_args
+
+    def test_explicit_revset(self):
+        """An explicit revset is passed via -r."""
+        self.cli.get_log_graph(callback=lambda *args: None, revset="mutable()")
+        assert "-r" in self.captured_args
+        r_index = self.captured_args.index("-r")
+        assert self.captured_args[r_index + 1] == "mutable()"

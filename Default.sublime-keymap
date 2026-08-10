@@ -51,5 +51,42 @@
         "keys": ["escape"],
         "command": "jj_split_cancel",
         "context": [{"key": "jj_split_view", "operand": true}]
+    },
+    // JJ Log View
+    // Active only inside the read-only log view opened by "JJ: Log View"
+    {
+        "keys": ["enter"],
+        "command": "jj_log_view_edit",
+        "context": [{"key": "jj_log_view", "operand": true}]
+    },
+    {
+        "keys": ["n"],
+        "command": "jj_log_view_new",
+        "context": [{"key": "jj_log_view", "operand": true}]
+    },
+    {
+        "keys": ["d"],
+        "command": "jj_log_view_describe",
+        "context": [{"key": "jj_log_view", "operand": true}]
+    },
+    {
+        "keys": ["a"],
+        "command": "jj_log_view_abandon",
+        "context": [{"key": "jj_log_view", "operand": true}]
+    },
+    {
+        "keys": ["r"],
+        "command": "jj_log_view_refresh",
+        "context": [{"key": "jj_log_view", "operand": true}]
+    },
+    {
+        "keys": ["?"],
+        "command": "jj_log_view_help",
+        "context": [{"key": "jj_log_view", "operand": true}]
+    },
+    {
+        "keys": ["escape"],
+        "command": "close",
+        "context": [{"key": "jj_log_view", "operand": true}]
     }
 ]

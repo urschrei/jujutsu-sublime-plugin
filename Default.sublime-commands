@@ -64,6 +64,10 @@
         "command": "jj_log"
     },
     {
+        "caption": "JJ: Log View",
+        "command": "jj_log_view"
+    },
+    {
         "caption": "JJ: Bookmark Set",
         "command": "jj_bookmark_set"
     },

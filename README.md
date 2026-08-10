@@ -73,6 +73,7 @@ Both operations are recorded in the operation log, so they can be undone with "J
 |---------|-------------|
 | **JJ: Edit Change...** | Switch to editing a different change |
 | **JJ: Log (Custom Revset)** | Query changes using any revset expression (e.g. `trunk()..@`, `author(me)`) |
+| **JJ: Log View** | Open a read-only log graph view with keybindings on the change under the cursor (see below) |
 | **JJ: Rebase...** | Rebase with full control over source mode (-r/-s/-b) and destination mode (-d/-A/-B) |
 
 ### Conflicts
@@ -83,6 +84,22 @@ Both operations are recorded in the operation log, so they can be undone with "J
 | **JJ: Conflicted Files** | List conflicted files in the working copy; selecting one opens it at the first conflict marker |
 
 The status bar also flags conflicts: the current change gets a `(conflict)` marker, and a count of other conflicted mutable changes is appended when present.
+
+### Log View
+
+"JJ: Log View" opens a persistent, read-only tab showing the `jj log` graph. The view uses jj's configured default revset unless `log_view_revset` is set. The following keys act on the change under the cursor:
+
+| Key | Action |
+|-----|--------|
+| `enter` | Edit (check out) the change |
+| `n` | Create a new change on top of it |
+| `d` | Set its description |
+| `a` | Abandon it (with confirmation) |
+| `r` | Refresh the view |
+| `?` | Show this key reference |
+| `escape` | Close the view |
+
+The view refreshes automatically after each operation. Conflicted entries are outlined.
 
 ### Bookmark Management
 
@@ -169,6 +186,7 @@ These are convenient bindings for the most common operations. Copy whichever you
 - `jj_conflicted_files`
 - `jj_restore_file`
 - `jj_discard_interactive`
+- `jj_log_view`
 - `jj_pull_retrunk`
 - `jj_edit`
 - `jj_log`

@@ -11,6 +11,16 @@ from .commands.conflict_commands import (  # noqa: F401
     JjConflictedFilesCommand,
     JjConflictsCommand,
 )
+from .commands.log_view_commands import (  # noqa: F401
+    JjLogViewAbandonCommand,
+    JjLogViewCommand,
+    JjLogViewDescribeCommand,
+    JjLogViewEditCommand,
+    JjLogViewHelpCommand,
+    JjLogViewNewCommand,
+    JjLogViewRefreshCommand,
+    JjLogViewReplaceCommand,
+)
 from .commands.oplog_commands import JjOpLogCommand  # noqa: F401
 from .commands.quick_commands import (  # noqa: F401
     JjAbandonCommand,
@@ -53,6 +63,10 @@ from .commands.split_command import (  # noqa: F401
 )
 from .core.jj_cli import init_executor, shutdown_executor
 from .listeners.file_events import JjEventListener  # noqa: F401
+from .listeners.log_view_events import (  # noqa: F401
+    LogViewEventListener,
+    LogViewInputHandler,
+)
 from .listeners.split_events import (  # noqa: F401
     SplitViewEventListener,
     SplitViewInputHandler,

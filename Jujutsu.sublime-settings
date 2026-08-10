@@ -6,5 +6,9 @@
     // Debounce delay in seconds for updates after save.
     "debounce_delay": 0.5,
     // Enable debug logging.
-    "debug": false
+    "debug": false,
+    // Revset for the log view. Set to null to use jj's configured default.
+    "log_view_revset": null,
+    // Maximum number of changes shown in the log view.
+    "log_view_limit": 200
 }

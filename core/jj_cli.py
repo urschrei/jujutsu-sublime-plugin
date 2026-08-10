@@ -393,6 +393,59 @@ class JJCli:
                 files.append(ConflictedFile(path=line.strip(), description=""))
         return files
 
+    # Two-line-per-entry template for the graph log view
+    GRAPH_LOG_TEMPLATE = (
+        'change_id.shortest(8) ++ "  " ++ '
+        'if(description, description.first_line(), "(no description set)") ++ '
+        'if(empty, " (empty)", "") ++ '
+        'if(conflict, " (conflict)", "") ++ '
+        'if(bookmarks, "  [" ++ bookmarks.join(", ") ++ "]", "") ++ "\\n" ++ '
+        'author.email() ++ "  " ++ '
+        'committer.timestamp().format("%Y-%m-%d %H:%M") ++ "\\n"'
+    )
+
+    def get_log_graph(self, callback, revset=None, limit=200):
+        """Get the log rendered as a graph, plus the change ids it contains.
+
+        Callback receives (success, text_or_error, change_ids) where
+        change_ids is a set of the change id strings present in the graph.
+        Without a revset, jj's configured default revset is used.
+        """
+
+        graph_args = ["log", "-T", self.GRAPH_LOG_TEMPLATE, "-n", str(limit)]
+        id_args = [
+            "log",
+            "--no-graph",
+            "-T",
+            'change_id.shortest(8) ++ "\\n"',
+            "-n",
+            str(limit),
+        ]
+        if revset:
+            graph_args.extend(["-r", revset])
+            id_args.extend(["-r", revset])
+
+        def on_graph(result):
+            if not result.success:
+                callback(False, result.stderr, set())
+                return
+            graph_text = result.stdout
+
+            def on_ids(id_result):
+                if not id_result.success:
+                    callback(False, id_result.stderr, set())
+                    return
+                ids = {
+                    line.strip()
+                    for line in id_result.stdout.splitlines()
+                    if line.strip()
+                }
+                callback(True, graph_text, ids)
+
+            self.run_async(id_args, on_ids)
+
+        self.run_async(graph_args, on_graph)
+
     def get_log(self, callback, revset="::", limit=50):
         """Get commit log."""
 
@@ -441,9 +494,11 @@ class JJCli:
         """Get diff for a specific file."""
         self.get_diff(callback, file_path)
 
-    def new(self, callback, message=None):
-        """Create a new change."""
+    def new(self, callback, message=None, revision=None):
+        """Create a new change, optionally on top of a specific revision."""
         args = ["new"]
+        if revision:
+            args.append(revision)
         if message:
             args.extend(["-m", message])
         self.run_async(args, _make_success_callback(callback))
@@ -499,9 +554,12 @@ class JJCli:
 
         self.run_async(args, _make_success_callback(callback))
 
-    def abandon(self, callback):
-        """Abandon current change."""
-        self.run_async(["abandon"], _make_success_callback(callback))
+    def abandon(self, callback, revision=None):
+        """Abandon a change (default: the current change)."""
+        args = ["abandon"]
+        if revision:
+            args.append(revision)
+        self.run_async(args, _make_success_callback(callback))
 
     def undo(self, callback):
         """Undo last operation."""
