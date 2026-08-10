@@ -307,6 +307,16 @@ class JJCli:
         ]
         self.run_async(args, on_result)
 
+    # Per-line annotate template. Passed explicitly rather than relying on
+    # templates.file_annotate so that broken or outdated user template
+    # aliases cannot break the command.
+    ANNOTATE_TEMPLATE = (
+        'commit.change_id().shortest(8) ++ "  " ++ '
+        'pad_end(20, truncate_end(20, commit.author().email())) ++ "  " ++ '
+        'commit.committer().timestamp().format("%Y-%m-%d") ++ "  " ++ '
+        'pad_start(4, line_number) ++ ": " ++ content'
+    )
+
     def annotate_file(self, path, callback):
         """Annotate a file with the change that last modified each line.
 
@@ -316,7 +326,9 @@ class JJCli:
         def on_result(result):
             callback(result.success, result.stdout if result.success else result.stderr)
 
-        self.run_async(["file", "annotate", path], on_result)
+        self.run_async(
+            ["file", "annotate", path, "-T", self.ANNOTATE_TEMPLATE], on_result
+        )
 
     OP_LOG_TEMPLATE = (
         'id.short(12) ++ "|||" ++ '

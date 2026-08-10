@@ -429,7 +429,8 @@ class TestFileCommands:
     def test_annotate_args(self):
         """Annotate is passed the file path."""
         self.cli.annotate_file("src/a.py", callback=lambda *args: None)
-        assert self.captured_args == ["file", "annotate", "src/a.py"]
+        assert self.captured_args[:3] == ["file", "annotate", "src/a.py"]
+        assert "-T" in self.captured_args
 
 
 class TestOneLiners:
